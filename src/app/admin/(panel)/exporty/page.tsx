@@ -1,6 +1,11 @@
+import { requireAdmin } from "@/lib/auth";
+
 export const metadata = { title: "Exporty" };
 
-export default function ExportsPage() {
+export default async function ExportsPage() {
+  // Ověření v každé stránce, ne jen v layoutu: layout a stránka se vykreslují souběžně,
+  // takže přesměrování z layoutu nezabrání tomu, aby se data stránky dostala do odpovědi.
+  await requireAdmin();
   return (
     <div className="max-w-2xl">
       <h1 className="font-serif text-3xl font-bold text-gold">Exporty</h1>

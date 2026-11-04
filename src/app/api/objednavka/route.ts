@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createOrder, CheckoutError } from "@/lib/orders/create";
 import { startGopayPayment, orderUrl } from "@/lib/orders/payments";
-import { ipFromHeaders } from "@/lib/request";
+import { ipFromHeaders, readJson } from "@/lib/request";
 import { rateLimit } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 
@@ -13,7 +13,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Příliš mnoho pokusů o objednávku. Zkuste to prosím za chvíli." }, { status: 429 });
   }
 
-  const body = (await req.json().catch(() => null)) as { turnstileToken?: string } | null;
+  // objednávka má jednotky kB; víc je pokus o zahlcení
+  const body = (await readJson(req, 32_768)) as { turnstileToken?: string } | null;
   if (!body) return NextResponse.json({ error: "Neplatný požadavek." }, { status: 400 });
 
   if (!(await verifyTurnstile(body.turnstileToken, ip))) {

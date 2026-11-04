@@ -6,6 +6,7 @@ import { formatCzk, formatDateTime, formatZip } from "@/lib/format";
 import { DELIVERY_LABEL, PAYMENT_LABEL, STATUS_LABEL, statusLabel } from "@/lib/labels";
 import { ADMIN_TRANSITIONS } from "@/lib/orders/transitions";
 import { StatusActions, NoteForm, AnonymizeForm } from "./OrderForms";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata = { title: "Detail objednávky" };
 
@@ -20,6 +21,9 @@ const ACTION_LABEL: Record<string, string> = {
 const SOURCE_LABEL: Record<string, string> = { system: "systém", gopay: "GoPay", admin: "administrace", customer: "zákazník" };
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // Ověření v každé stránce, ne jen v layoutu: layout a stránka se vykreslují souběžně,
+  // takže přesměrování z layoutu nezabrání tomu, aby se data stránky dostala do odpovědi.
+  await requireAdmin();
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
   const [order, settings] = await Promise.all([

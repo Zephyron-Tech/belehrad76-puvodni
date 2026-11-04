@@ -72,6 +72,18 @@ describe("objednávky a sklad", () => {
     expect(await boxStock()).toBe(0);
   });
 
+  it("z jedné IP nejde nezaplacenými objednávkami zablokovat sklad boxů", async () => {
+    await setSetting("order.max_boxes", "3");
+    const first = await createOrder(checkout({ lines: [{ slug: "box", quantity: 3 }] }), "9.9.9.9");
+    await expect(createOrder(checkout(), "9.9.9.9")).rejects.toThrow("čekají na zaplacení");
+    // jiná adresa a objednávka bez boxu projdou
+    await expect(createOrder(checkout(), "8.8.8.8")).resolves.toBeTruthy();
+    await expect(createOrder(checkout({ lines: [{ slug: "viktor", quantity: 1 }] }), "9.9.9.9")).resolves.toBeTruthy();
+    // po zaplacení první objednávky už z té adresy nic nečeká
+    await markPaid(first.id, admin);
+    await expect(createOrder(checkout(), "9.9.9.9")).resolves.toBeTruthy();
+  });
+
   it("validace: chybí souhlasy nebo adresa", async () => {
     await expect(
       createOrder({ ...checkout(), consents: { terms: true, age: false, privacy: true, marketing: false } }, null),

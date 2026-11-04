@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { formatCzk, formatDateTime } from "@/lib/format";
 import { DELIVERY_LABEL, STATUS_LABEL, statusLabel } from "@/lib/labels";
 import { maybeExpireStaleOrders } from "@/lib/orders/expire";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata = { title: "Objednávky" };
 
@@ -21,6 +22,9 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 type Props = { searchParams: Promise<{ stav?: string; q?: string; strana?: string; vecer?: string }> };
 
 export default async function OrdersPage({ searchParams }: Props) {
+  // Ověření v každé stránce, ne jen v layoutu: layout a stránka se vykreslují souběžně,
+  // takže přesměrování z layoutu nezabrání tomu, aby se data stránky dostala do odpovědi.
+  await requireAdmin();
   maybeExpireStaleOrders();
   const sp = await searchParams;
   const status = STATUSES.includes(sp.stav as OrderStatus) ? (sp.stav as OrderStatus) : undefined;

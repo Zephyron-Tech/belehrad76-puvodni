@@ -22,7 +22,9 @@ export const checkoutSchema = z
   .object({
     lines: z
       .array(z.object({ slug: z.string().min(1).max(100), quantity: z.number().int().positive().max(1000) }))
-      .min(1, "Košík je prázdný."),
+      .min(1, "Košík je prázdný.")
+      // v nabídce je 14 produktů; strop chrání validaci před obřím polem
+      .max(50, "Košík obsahuje příliš mnoho položek."),
     customer: z.object({
       firstName: z.string().trim().min(1, "Vyplňte jméno.").max(80),
       lastName: z.string().trim().min(1, "Vyplňte příjmení.").max(80),
@@ -93,6 +95,39 @@ export function zodFieldErrors(error: z.ZodError): Record<string, string> {
   return out;
 }
 
+/** Jak daleko do minulosti se počítají nezaplacené objednávky z jedné IP (nejdelší rezervace převodem). */
+const HOARDING_WINDOW_MS = 14 * 24 * 3_600_000;
+
+/**
+ * Ochrana skladu boxů: nezaplacená objednávka box drží (převodem i několik dní). Bez limitu by šlo
+ * z jedné adresy opakovanými objednávkami zablokovat celý sklad. Z jedné IP proto smí na zaplacení
+ * čekat nejvýš tolik boxů, kolik jde koupit v jedné objednávce. Počítá se z databáze (audit log),
+ * takže limit platí i při více instancích aplikace.
+ */
+async function assertNoReservationHoarding(
+  ip: string | null,
+  lines: { type: string; quantity: number }[],
+  maxBoxes: number,
+) {
+  const newBoxes = lines.filter((l) => l.type === "BOX").reduce((s, l) => s + l.quantity, 0);
+  if (!ip || newBoxes === 0) return;
+  const created = await prisma.auditLog.findMany({
+    where: { action: "order_created", ip, createdAt: { gte: new Date(Date.now() - HOARDING_WINDOW_MS) } },
+    select: { orderId: true },
+  });
+  const orderIds = created.map((a) => a.orderId).filter((id): id is number => id !== null);
+  if (orderIds.length === 0) return;
+  const pending = await prisma.orderItem.aggregate({
+    _sum: { quantity: true },
+    where: { type: "BOX", order: { id: { in: orderIds }, status: "PENDING" } },
+  });
+  if ((pending._sum.quantity ?? 0) + newBoxes > maxBoxes) {
+    throw new CheckoutError(
+      "Z vašeho připojení už čekají na zaplacení jiné objednávky boxů. Dokončete prosím jejich platbu, nebo počkejte, až vyprší.",
+    );
+  }
+}
+
 /**
  * Vytvoří objednávku, zarezervuje boxy a pošle e-mail „objednávka přijata“.
  * Rezervace platí po dobu platby (GoPay) nebo několik dní (převod), pak se objednávka zruší.
@@ -112,6 +147,8 @@ export async function createOrder(raw: unknown, ip: string | null) {
   if (input.deliveryMethod === "PICKUP" && !settings.bool("pickup.enabled")) {
     throw new CheckoutError("Osobní převzetí momentálně není k dispozici.");
   }
+
+  await assertNoReservationHoarding(ip, cart.lines, settings.num("order.max_boxes"));
 
   const shippingCzk = cart.shipping[input.deliveryMethod];
   const reservationMs =

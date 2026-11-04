@@ -21,9 +21,16 @@ export const env = {
   get primaryHost() {
     return read("PRIMARY_HOST");
   },
+  /**
+   * Simulovaná brána (mock) jen když je výslovně nastavená, nebo při vývoji.
+   * Na produkčním buildu bez GOPAY_MODE se nesmí tiše zapnout simulace – kdokoli by si
+   * mohl objednávku „zaplatit“ na testovací stránce. Bez nastavení se tam použije ostrá
+   * brána, která bez přihlašovacích údajů GoPay platbu jen odmítne.
+   */
   get gopayMode(): GopayMode {
-    const mode = read("GOPAY_MODE", "mock");
-    return mode === "production" || mode === "sandbox" ? mode : "mock";
+    const mode = read("GOPAY_MODE");
+    if (mode === "production" || mode === "sandbox" || mode === "mock") return mode;
+    return process.env.NODE_ENV === "production" ? "production" : "mock";
   },
   get gopayGoid() {
     return read("GOPAY_GOID");

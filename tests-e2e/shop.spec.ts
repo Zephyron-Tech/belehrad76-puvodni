@@ -182,6 +182,12 @@ test("validace pokladny: chybějící údaje a souhlasy", async ({ page }) => {
 test("administrace: bez přihlášení nic, přihlášení s 2FA, platba převodem, převzetí, export", async ({ page, request }) => {
   // Bez přihlášení
   expect((await request.get("/admin/export/vecer", { maxRedirects: 0 })).status()).toBe(307);
+  // Podvržená cookie: stránky administrace přesměrují a v odpovědi nesmí být žádná data objednávek
+  for (const path of ["/admin", `/admin/objednavky/${(await prisma.order.findFirstOrThrow({ orderBy: { id: "desc" } })).id}`, "/admin/exporty"]) {
+    const res = await request.get(path, { maxRedirects: 0, headers: { cookie: "admin_session=podvrh" } });
+    expect(res.status(), path).toBe(307);
+    expect(await res.text(), path).not.toMatch(/@example\.com/);
+  }
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/admin\/login/);
 
