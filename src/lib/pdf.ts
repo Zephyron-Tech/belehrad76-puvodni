@@ -93,11 +93,16 @@ export async function paymentConfirmationPdf(order: OrderWithItems, settings: Se
     ["Datum přijetí platby", formatDateTime(order.paidAt ?? new Date())],
     ["Způsob platby", PAYMENT_LABEL[order.paymentMethod]],
     ["Variabilní symbol", order.number],
-    ["Způsob dodání", DELIVERY_LABEL[order.deliveryMethod]],
+    [
+      "Způsob dodání",
+      order.deliveryMethod === "PACKETA" && order.packetaPointName
+        ? `Zásilkovna – ${order.packetaPointName}`
+        : DELIVERY_LABEL[order.deliveryMethod],
+    ],
   ];
   for (const [label, value] of meta) {
     text(label, left, y, { color: MUTED });
-    text(value, left + 150, y);
+    text(wrap(value, regular, 10, right - left - 150), left + 150, y);
     y -= 15;
   }
   y -= 14;

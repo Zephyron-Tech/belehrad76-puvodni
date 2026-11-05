@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getActiveProducts } from "@/lib/catalog";
+import { getActiveProducts, shippingRates } from "@/lib/catalog";
+import { bottleShippingFromCzk } from "@/lib/shipping";
 import { getSettings } from "@/lib/settings";
 import { formatCzk } from "@/lib/format";
 import { maybeExpireStaleOrders } from "@/lib/orders/expire";
@@ -64,8 +65,9 @@ export default async function EshopPage() {
         <h2 className="font-serif text-3xl font-bold text-gold">Lahve jednotlivých hráčů</h2>
         <p className="mt-2 max-w-2xl text-cream/80">
           Vyberte si svého hráče – každá lahev slivovice 50 % nese jeho portrét, jméno a číslo dresu.{" "}
-          {settings.text("bottle.lead_time")} Doprava {formatCzk(settings.num("shipping.bottle_czk"))} za lahev, s boxem v objednávce
-          jen {formatCzk(settings.num("shipping.box_czk"))} za celou zásilku. Osobní převzetí na FAČR je zdarma.
+          {settings.text("bottle.lead_time")} Lahve posíláme Zásilkovnou na výdejní místo od{" "}
+          {formatCzk(bottleShippingFromCzk(shippingRates(settings)))} za zásilku (podle hmotnosti, s ověřením věku 18+), s boxem
+          v objednávce kurýrem za {formatCzk(settings.num("shipping.box_czk"))} za celou zásilku. Osobní převzetí na FAČR je zdarma.
         </p>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {bottles.map((p) => (

@@ -31,7 +31,10 @@ enum PaymentMethod {
 }
 
 enum DeliveryMethod {
+  /// Kurýr na adresu (objednávka s boxem, nebo kusovky dražší než kurýr)
   SHIPPING
+  /// Zásilkovna – výdejní místo / Z-BOX (jen kusovky)
+  PACKETA
   PICKUP
 }
 
@@ -110,6 +113,16 @@ model Order {
   city    String?
   zip     String?
   country String  @default("CZ")
+
+  // Zásilkovna: zvolené výdejní místo / Z-BOX (jen u deliveryMethod = PACKETA)
+  packetaPointId      String?
+  packetaPointName    String?
+  packetaPointAddress String?
+  /// Zásilky založené přes API Zásilkovny (ID zásilek a čárové kódy Z…, víc při rozdělení objednávky)
+  packetaPacketIds    String[]  @default([])
+  packetaBarcodes     String[]  @default([])
+  /// Probíhá zakládání zásilek (pojistka proti dvojímu založení při dvojkliku)
+  packetaRequestedAt  DateTime?
 
   // Fakturační údaje (volitelné)
   companyName String?

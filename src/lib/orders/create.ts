@@ -34,7 +34,15 @@ export const checkoutSchema = z
         .trim()
         .regex(/^\+?[0-9 ]{9,20}$/, "Zadejte platné telefonní číslo."),
     }),
-    deliveryMethod: z.enum(["SHIPPING", "PICKUP"]),
+    deliveryMethod: z.enum(["SHIPPING", "PACKETA", "PICKUP"]),
+    /** Zásilkovna: výdejní místo vybrané ve widgetu (jen místa s ověřením věku, bez Z-BOXů) */
+    packetaPoint: z
+      .object({
+        id: z.string().trim().regex(/^\d{1,12}$/, "Neplatné výdejní místo."),
+        name: z.string().trim().min(1).max(200),
+        address: z.string().trim().max(300).default(""),
+      })
+      .optional(),
     address: z
       .object({
         street: z.string().trim().max(120).optional(),
@@ -74,6 +82,9 @@ export const checkoutSchema = z
       if (!a.city) ctx.addIssue({ code: "custom", path: ["address", "city"], message: "Vyplňte město." });
       if (!a.zip || !/^\d{3}\s?\d{2}$/.test(a.zip))
         ctx.addIssue({ code: "custom", path: ["address", "zip"], message: "Zadejte PSČ ve tvaru 123 45." });
+    }
+    if (data.deliveryMethod === "PACKETA" && !data.packetaPoint) {
+      ctx.addIssue({ code: "custom", path: ["packetaPoint"], message: "Vyberte výdejní místo Zásilkovny." });
     }
     const ico = data.billing?.ico;
     if (ico && !/^\d{8}$/.test(ico)) ctx.addIssue({ code: "custom", path: ["billing", "ico"], message: "IČO má 8 číslic." });
@@ -151,6 +162,13 @@ export async function createOrder(raw: unknown, ip: string | null) {
   await assertNoReservationHoarding(ip, cart.lines, settings.num("order.max_boxes"));
 
   const shippingCzk = cart.shipping[input.deliveryMethod];
+  if (shippingCzk === null) {
+    throw new CheckoutError(
+      input.deliveryMethod === "PACKETA"
+        ? "Objednávku s boxem nebo s větším počtem lahví doručujeme kurýrem na adresu – zvolte prosím jiný způsob dopravy."
+        : "Lahve bez boxu posíláme Zásilkovnou na výdejní místo – zvolte prosím jiný způsob dopravy.",
+    );
+  }
   const reservationMs =
     input.paymentMethod === "GOPAY"
       ? settings.num("reservation.gopay_minutes") * 60_000
@@ -177,6 +195,9 @@ export async function createOrder(raw: unknown, ip: string | null) {
           street: isShipping ? input.address?.street : null,
           city: isShipping ? input.address?.city : null,
           zip: isShipping ? input.address?.zip?.replace(/\s/g, "") : null,
+          packetaPointId: input.deliveryMethod === "PACKETA" ? input.packetaPoint?.id : null,
+          packetaPointName: input.deliveryMethod === "PACKETA" ? input.packetaPoint?.name : null,
+          packetaPointAddress: input.deliveryMethod === "PACKETA" ? input.packetaPoint?.address || null : null,
           companyName: input.billing?.companyName,
           ico: input.billing?.ico,
           dic: input.billing?.dic?.toUpperCase(),

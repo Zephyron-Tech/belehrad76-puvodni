@@ -110,7 +110,7 @@ export async function markShipped(
   shipment: { carrier?: string | null; trackingNumber?: string | null },
   ctx: ActionContext,
 ) {
-  const carrier = shipment.carrier?.trim() || null;
+  let carrier = shipment.carrier?.trim() || null;
   const trackingNumber = shipment.trackingNumber?.trim() || null;
 
   const changed = await prisma.$transaction(async (tx) => {
@@ -118,6 +118,7 @@ export async function markShipped(
     if (order.status === "SHIPPED") return false;
     if (order.status !== "PAID") throw new TransitionError("Odeslat lze jen zaplacenou objednávku.");
     if (order.deliveryMethod === "SHIPPING" && !carrier) throw new TransitionError("Vyplňte dopravce.");
+    if (order.deliveryMethod === "PACKETA") carrier ??= "Zásilkovna";
 
     await tx.order.update({
       where: { id: order.id },

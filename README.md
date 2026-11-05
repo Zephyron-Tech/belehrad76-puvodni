@@ -3,7 +3,7 @@
 Web a e-shop limitované edice slivovice k 50. výročí vítězství na ME 1976. Zadání: [`SPECIFIKACE.md`](SPECIFIKACE.md).
 
 - **Prodej:** 1 box (13 lahví, sklad 144 = 152 − 8 do dražby) + 13 kusovek (neomezeně, vyrábí se na objednávku)
-- **Doprava:** objednávka s boxem 490 Kč jednou (i více boxů a kusovky), jen kusovky 100 Kč/ks, osobní převzetí na FAČR zdarma
+- **Doprava:** objednávka s boxem kurýrem 490 Kč jednou (i více boxů a kusovky), jen kusovky Zásilkovnou na výdejní místo (bez Z-BOXů – neumí ověření věku 18+) podle hmotnosti (dráž než 490 Kč → kurýr na adresu za 490 Kč), osobní převzetí na FAČR zdarma
 - **Platby:** GoPay (karta, rychlý převod, Apple/Google Pay) + ruční převod s QR kódem na účet 303642799/0300
 - **Po zaplacení:** e-mail s PDF potvrzením o zaplacení (ne faktura), upozornění provozovateli
 - **Administrace:** jen objednávky, za přihlášením s 2FA, jeden společný účet, audit log, exporty CSV
@@ -63,7 +63,8 @@ Nejdůležitější klíče v `Setting` (úplný seznam s popisy: [`src/config/d
 | Klíč | Výchozí | Význam |
 |------|---------|--------|
 | `sales.open` | `true` | Vypnutí prodeje (košík a objednávky) |
-| `shipping.box_czk` / `shipping.bottle_czk` | 490 / 100 | Doprava: objednávka s boxem jednou 490 Kč, jen kusovky 100 Kč/ks |
+| `shipping.box_czk` | 490 | Kurýr na adresu: objednávka s boxem jednou 490 Kč; kusovky, u kterých by Zásilkovna vyšla dráž |
+| `packeta.*` | ceník od 1. 11. 2026 | Zásilkovna pro kusovky (jen výdejní místo s obsluhou): ceny bez DPH, palivový a mýtný příplatek, ověření věku, hmotnost lahve a obalu (viz níže) |
 | `pickup.enabled`, `pickup.address`, `pickup.note` | | Osobní převzetí na FAČR |
 | `bottle.lead_time` | | Text o dodací lhůtě kusovek (8 dní) |
 | `box.delivery` | | Text o doručení boxu (kurýr, 8 dní) |
@@ -74,6 +75,20 @@ Nejdůležitější klíče v `Setting` (úplný seznam s popisy: [`src/config/d
 | `social.facebook_url`, `social.instagram_url`, `foundation.url` | prázdné | Odkazy (prázdné = skryté) |
 | `seller.*` | Petite Eiffel, s.r.o. | Údaje prodávajícího (patička, podmínky, PDF) |
 | `home.*`, `evening.date`, `seo.description` | | Texty úvodu |
+
+**Doprava (`src/lib/shipping.ts`):** objednávka s boxem → jen kurýr na adresu (490 Kč). Jen kusovky → jen Zásilkovna
+na výdejní místo s ověřením věku (mapa nabízí jen taková, bez Z-BOXů), které zákazník vybere v pokladně ve widgetu Zásilkovny (`PACKETA_API_KEY`; bez klíče se při
+vývoji nabízí testovací místo). Vždy lze i osobní převzetí na FAČR zdarma. Cena Zásilkovny v ČR nezávisí na vzdálenosti, jen na hmotnosti.
+
+```
+hmotnost zásilky = lahve × (packeta.bottle_kg + packeta.padding_per_bottle_kg) + packeta.package_kg
+základ           = packeta.standard_czk (do 5 kg) / packeta.oversize_czk (5–15 kg)
+cena zásilky     = základ × (1 + packeta.fuel_pct %) + započaté kg × packeta.toll_per_kg_czk + packeta.age_check_czk
+doprava          = součet zásilek × (1 + DPH), nahoru na celé Kč;  > shipping.box_czk → jen kurýr na adresu za shipping.box_czk
+```
+
+Do jedné zásilky se vejde 13 lahví (15 kg), víc se rozdělí. Palivový příplatek Zásilkovna mění každý měsíc
+(zasilkovna.cz/ceniky-a-priplatky) – aktualizovat `packeta.fuel_pct`.
 
 **Sklad boxů:** `Product.stock` u boxu je počet boxů k prodeji. Snižuje se už při vytvoření objednávky
 (rezervace) a vrací se při zrušení / vypršení. Ruční doplnění = zvýšit `stock`.
@@ -135,7 +150,7 @@ Při startu kontejner aplikuje migrace a doplní výchozí data.
 
 GitHub **Secrets:** `HOST`, `USERNAME`, `SSH_KEY`, `POSTGRES_PASSWORD`, `CRON_SECRET`, `GOPAY_GOID`,
 `GOPAY_CLIENT_ID`, `GOPAY_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SECURE`,
-`TURNSTILE_SECRET_KEY`, `META_CAPI_TOKEN`.
+`TURNSTILE_SECRET_KEY`, `META_CAPI_TOKEN`, `PACKETA_API_KEY`, `PACKETA_API_PASSWORD`.
 GitHub **Variables:** `APP_URL`, `PRIMARY_HOST`, `GOPAY_MODE`, `GOPAY_INSTRUMENTS`, `MAIL_FROM`,
 `TURNSTILE_SITE_KEY`, `GA4_MEASUREMENT_ID`, `META_PIXEL_ID`.
 

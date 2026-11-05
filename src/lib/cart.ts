@@ -1,5 +1,5 @@
 import type { ProductType } from "@prisma/client";
-import { calcShipping, type ShippingRates } from "./shipping";
+import { shippingOptions, type ShippingOptions, type ShippingRates } from "./shipping";
 
 export type CartLineInput = { slug: string; quantity: number };
 
@@ -37,7 +37,8 @@ export type PricedCart = {
   boxes: number;
   bottles: number;
   itemsTotalCzk: number;
-  shipping: { SHIPPING: number; PICKUP: number };
+  /** Cena dopravy podle způsobu doručení; null = pro tento košík není k dispozici */
+  shipping: ShippingOptions;
   hasMadeToOrder: boolean;
 };
 
@@ -130,10 +131,7 @@ export function priceCart(
     boxes,
     bottles,
     itemsTotalCzk: lines.reduce((s, l) => s + l.lineTotalCzk, 0),
-    shipping: {
-      SHIPPING: calcShipping({ boxes, bottles }, "SHIPPING", rates),
-      PICKUP: calcShipping({ boxes, bottles }, "PICKUP", rates),
-    },
+    shipping: shippingOptions({ boxes, bottles }, rates),
     hasMadeToOrder: lines.some((l) => l.madeToOrder),
   };
 }

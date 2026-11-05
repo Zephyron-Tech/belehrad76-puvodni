@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { NavigationProgress } from "@/components/NavigationProgress";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -27,7 +28,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="cs">
-      <body className={`${playfair.variable} ${inter.variable} antialiased`}>{children}</body>
+      <body className={`${playfair.variable} ${inter.variable} antialiased`}>
+        <NavigationProgress />
+        {children}
+      </body>
     </html>
   );
 }

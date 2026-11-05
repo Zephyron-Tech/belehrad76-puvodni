@@ -48,3 +48,14 @@ export function checkout(overrides: Partial<CheckoutInput> = {}): CheckoutInput 
     ...overrides,
   };
 }
+
+/** Objednávka jen kusovek: doprava Zásilkovnou na výdejní místo. */
+export function bottlesCheckout(lines: CheckoutInput["lines"], overrides: Partial<CheckoutInput> = {}): CheckoutInput {
+  return checkout({
+    lines,
+    deliveryMethod: "PACKETA",
+    address: undefined,
+    packetaPoint: { id: "12345", name: "Praha 6, Dejvická 1 (Trafika)", address: "Dejvická 1, 160 00 Praha" },
+    ...overrides,
+  });
+}

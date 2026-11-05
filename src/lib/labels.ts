@@ -20,7 +20,8 @@ export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
 };
 
 export const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
-  SHIPPING: "Doručení na adresu",
+  SHIPPING: "Kurýr na adresu",
+  PACKETA: "Zásilkovna – výdejní místo",
   PICKUP: "Osobní převzetí na FAČR",
 };
 

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getProductBySlug } from "@/lib/catalog";
+import { getProductBySlug, shippingRates } from "@/lib/catalog";
+import { bottleShippingFromCzk } from "@/lib/shipping";
 import { getSettings } from "@/lib/settings";
 import { formatCzk } from "@/lib/format";
 import { maybeExpireStaleOrders } from "@/lib/orders/expire";
@@ -33,7 +34,7 @@ export default async function ProductPage({ params }: Props) {
   const salesOpen = settings.bool("sales.open");
   const gallery = [product.imageUrl, ...product.galleryUrls.filter((u) => u !== product.imageUrl)];
   const max = settings.num("order.max_bottles");
-  const shippingText = `Doprava ${formatCzk(settings.num("shipping.bottle_czk"))} za lahev, s boxem v objednávce jen ${formatCzk(settings.num("shipping.box_czk"))} za celou zásilku.`;
+  const shippingText = `Doprava Zásilkovnou na výdejní místo od ${formatCzk(bottleShippingFromCzk(shippingRates(settings)))} za zásilku (podle hmotnosti), s boxem v objednávce kurýrem jen ${formatCzk(settings.num("shipping.box_czk"))} za celou zásilku.`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">

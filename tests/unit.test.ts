@@ -1,27 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { calcShipping } from "@/lib/shipping";
+import { packetaQuote, shippingOptions } from "@/lib/shipping";
+import { shippingRates } from "@/lib/catalog";
 import { buildSpd, czechAccountToIban, isValidIban } from "@/lib/bank";
 import { priceCart, type CatalogProduct } from "@/lib/cart";
 import { toCsv } from "@/lib/csv";
 import { Settings } from "@/lib/settings";
 import { typo } from "@/lib/format";
 
-const rates = { boxCzk: 490, bottleCzk: 100 };
+// Výchozí sazby z default-settings (ceník Zásilkovny od 1. 11. 2026)
+const rates = shippingRates(new Settings({}));
 
 describe("doprava", () => {
-  it("box 490 Kč jednou, i při více boxech", () => {
-    expect(calcShipping({ boxes: 1, bottles: 0 }, "SHIPPING", rates)).toBe(490);
-    expect(calcShipping({ boxes: 2, bottles: 0 }, "SHIPPING", rates)).toBe(490);
+  it("box: jen kurýr na adresu, 490 Kč jednou, i při více boxech a kusovkách", () => {
+    expect(shippingOptions({ boxes: 1, bottles: 0 }, rates)).toEqual({ SHIPPING: 490, PACKETA: null, PICKUP: 0 });
+    expect(shippingOptions({ boxes: 3, bottles: 5 }, rates)).toEqual({ SHIPPING: 490, PACKETA: null, PICKUP: 0 });
   });
-  it("kusovka 100 Kč za kus", () => {
-    expect(calcShipping({ boxes: 0, bottles: 3 }, "SHIPPING", rates)).toBe(300);
+  it("jen kusovky: jen Zásilkovna na výdejní místo, osobní převzetí zdarma", () => {
+    expect(shippingOptions({ boxes: 0, bottles: 1 }, rates)).toEqual({ SHIPPING: null, PACKETA: 138, PICKUP: 0 });
   });
-  it("smíšený košík: jen jednou 490 Kč, kusovky se nepřičítají", () => {
-    expect(calcShipping({ boxes: 1, bottles: 2 }, "SHIPPING", rates)).toBe(490);
-    expect(calcShipping({ boxes: 3, bottles: 5 }, "SHIPPING", rates)).toBe(490);
+  it("kusovky dražší než kurýr: jen kurýr na adresu za 490 Kč", () => {
+    expect(shippingOptions({ boxes: 0, bottles: 26 }, rates).PACKETA).toBe(477);
+    expect(shippingOptions({ boxes: 0, bottles: 27 }, rates)).toEqual({ SHIPPING: 490, PACKETA: null, PICKUP: 0 });
   });
-  it("osobní převzetí zdarma", () => {
-    expect(calcShipping({ boxes: 3, bottles: 5 }, "PICKUP", rates)).toBe(0);
+});
+
+describe("Zásilkovna – výdejní místo / Z-BOX", () => {
+  it("1 lahev: 1,5 kg standardní zásilka = (72 + 19,5 % palivo + 2 × 1,10 mýto + 25 ověření věku) × 1,21", () => {
+    const q = packetaQuote(1, rates.packeta);
+    expect(q.parcels).toHaveLength(1);
+    expect(q.parcels[0]).toMatchObject({ weightKg: 1.5, size: "standard", baseCzk: 72, fuelCzk: 14.04, tollCzk: 2.2, ageCheckCzk: 25 });
+    expect(q.netCzk).toBe(113.24);
+    expect(q.grossCzk).toBe(138);
+  });
+  it("3 lahve: jedna standardní zásilka 3,7 kg", () => {
+    const q = packetaQuote(3, rates.packeta);
+    expect(q.parcels).toHaveLength(1);
+    expect(q.parcels[0]).toMatchObject({ weightKg: 3.7, size: "standard", tollCzk: 4.4 });
+    expect(q.grossCzk).toBe(140);
+  });
+  it("5 lahví: přes 5 kg → nadrozměrná zásilka", () => {
+    const q = packetaQuote(5, rates.packeta);
+    expect(q.parcels[0]).toMatchObject({ weightKg: 5.9, size: "oversize", baseCzk: 130 });
+    expect(q.grossCzk).toBe(227);
+  });
+  it("14 lahví: plná zásilka (13 lahví, 14,7 kg) + 1 lahev zvlášť", () => {
+    const q = packetaQuote(14, rates.packeta);
+    expect(q.parcels.map((p) => p.bottles)).toEqual([13, 1]);
+    expect(q.parcels[0].weightKg).toBe(14.7);
   });
 });
 
@@ -65,7 +90,7 @@ describe("košík", () => {
     );
     expect(cart.issues).toEqual([]);
     expect(cart.itemsTotalCzk).toBe(9880 + 1520);
-    expect(cart.shipping).toEqual({ SHIPPING: 490, PICKUP: 0 });
+    expect(cart.shipping).toEqual({ SHIPPING: 490, PACKETA: null, PICKUP: 0 });
     expect(cart.hasMadeToOrder).toBe(true);
   });
 

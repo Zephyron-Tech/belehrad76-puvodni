@@ -7,7 +7,7 @@ import { AppError, PaymentError, userMessage } from "@/lib/errors";
 import { startGopayPayment, syncGopayPayment } from "@/lib/orders/payments";
 import { eveningCsv } from "@/lib/exports";
 import { sentMailLog } from "@/lib/mail/transport";
-import { boxStock, checkout, resetDb, setSetting } from "./helpers";
+import { bottlesCheckout, boxStock, checkout, resetDb, setSetting } from "./helpers";
 
 const admin = { source: "admin" as const, actor: "JN", ip: "127.0.0.1" };
 
@@ -37,9 +37,12 @@ describe("objednávky a sklad", () => {
     expect(sentMailLog[0].attachments).toContain("qr-platba.png");
   });
 
-  it("jen kusovky: sklad boxů se nemění, doprava 100 Kč/ks, osobní převzetí zdarma", async () => {
-    const shipped = await createOrder(checkout({ lines: [{ slug: "viktor", quantity: 3 }] }), null);
-    expect(shipped.shippingCzk).toBe(300);
+  it("jen kusovky: sklad boxů se nemění, doprava Zásilkovnou, osobní převzetí zdarma", async () => {
+    const shipped = await createOrder(bottlesCheckout([{ slug: "viktor", quantity: 3 }]), null);
+    expect(shipped.shippingCzk).toBe(140); // 3 lahve, Zásilkovna na výdejní místo
+    expect(shipped.deliveryMethod).toBe("PACKETA");
+    expect(shipped.packetaPointId).toBe("12345");
+    expect(shipped.street).toBeNull();
     expect(shipped.stockReserved).toBe(false);
 
     const pickup = await createOrder(
@@ -51,8 +54,18 @@ describe("objednávky a sklad", () => {
     expect(await boxStock()).toBe(144);
   });
 
+  it("doprava podle košíku: kusovky jen Zásilkovnou, box jen kurýrem, výdejní místo povinné", async () => {
+    await expect(createOrder(checkout({ lines: [{ slug: "viktor", quantity: 1 }] }), null)).rejects.toThrow("Zásilkovnou");
+    await expect(
+      createOrder(bottlesCheckout([{ slug: "box", quantity: 1 }]), null),
+    ).rejects.toThrow("kurýrem");
+    await expect(
+      createOrder(bottlesCheckout([{ slug: "viktor", quantity: 1 }], { packetaPoint: undefined }), null),
+    ).rejects.toMatchObject({ fieldErrors: { packetaPoint: "Vyberte výdejní místo Zásilkovny." } });
+  });
+
   it("losování o vstup na večer jen u objednávky s boxem", async () => {
-    const bottles = await createOrder(checkout({ lines: [{ slug: "viktor", quantity: 2 }], eveningInterest: true }), null);
+    const bottles = await createOrder(bottlesCheckout([{ slug: "viktor", quantity: 2 }], { eveningInterest: true }), null);
     expect(bottles.eveningInterest).toBe(false);
     const withBox = await createOrder(checkout({ eveningInterest: true }), null);
     expect(withBox.eveningInterest).toBe(true);
@@ -78,7 +91,7 @@ describe("objednávky a sklad", () => {
     await expect(createOrder(checkout(), "9.9.9.9")).rejects.toThrow("čekají na zaplacení");
     // jiná adresa a objednávka bez boxu projdou
     await expect(createOrder(checkout(), "8.8.8.8")).resolves.toBeTruthy();
-    await expect(createOrder(checkout({ lines: [{ slug: "viktor", quantity: 1 }] }), "9.9.9.9")).resolves.toBeTruthy();
+    await expect(createOrder(bottlesCheckout([{ slug: "viktor", quantity: 1 }]), "9.9.9.9")).resolves.toBeTruthy();
     // po zaplacení první objednávky už z té adresy nic nečeká
     await markPaid(first.id, admin);
     await expect(createOrder(checkout(), "9.9.9.9")).resolves.toBeTruthy();

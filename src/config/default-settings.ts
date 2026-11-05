@@ -34,8 +34,26 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
 
   // Prodej a doprava
   { key: "sales.open", value: "true", description: "true = prodej spuštěn, false = košík a objednávky vypnuty" },
-  { key: "shipping.box_czk", value: "490", description: "Doprava za objednávku s boxem v Kč (jednou, i při více boxech a kusovkách)" },
-  { key: "shipping.bottle_czk", value: "100", description: "Doprava za každou kusovku v Kč (jen u objednávky bez boxu)" },
+  { key: "shipping.box_czk", value: "490", description: "Kurýr na adresu v Kč: objednávka s boxem (jednou, i při více boxech a kusovkách) a kusovky, u kterých by Zásilkovna vyšla dráž" },
+  // Zásilkovna – doprava kusovek (objednávka bez boxu) jen na výdejní místo s obsluhou (Z-BOX neumí ověření věku 18+). Ceník Zásilkovny od 1. 11. 2026,
+  // podání na podacím místě, ceny bez DPH. Cena nezávisí na vzdálenosti. Dražší než shipping.box_czk → kurýr na adresu.
+  { key: "packeta.standard_czk", value: "72", description: "Zásilkovna: výdejní místo, standardní zásilka do 5 kg, Kč bez DPH" },
+  { key: "packeta.oversize_czk", value: "130", description: "Zásilkovna: výdejní místo, nadrozměrná zásilka 5–15 kg, Kč bez DPH" },
+  { key: "packeta.standard_max_kg", value: "5", description: "Zásilkovna: hranice standardní zásilky v kg" },
+  { key: "packeta.parcel_max_kg", value: "15", description: "Zásilkovna: max. hmotnost jedné zásilky v kg (víc = více zásilek)" },
+  { key: "packeta.fuel_pct", value: "19.5", description: "Zásilkovna: palivový příplatek v % (mění se měsíčně, viz zasilkovna.cz/ceniky-a-priplatky)" },
+  { key: "packeta.toll_per_kg_czk", value: "1.10", description: "Zásilkovna: mýtný příplatek za započatý kg, Kč bez DPH" },
+  { key: "packeta.age_check_czk", value: "25", description: "Zásilkovna: ověření věku 18+ za zásilku, Kč bez DPH" },
+  { key: "packeta.bottle_kg", value: "1", description: "Hmotnost jedné lahve v kg" },
+  { key: "packeta.package_kg", value: "0.4", description: "Hmotnost krabice na zásilku v kg" },
+  { key: "packeta.padding_per_bottle_kg", value: "0.1", description: "Hmotnost ochranné vložky na lahev v kg" },
+  {
+    key: "packeta.sender",
+    value: "",
+    description: "Zásilkovna: označení odesílatele (eshop) z klientské sekce – vyplnit jen při více odesílatelích na účtu",
+  },
+  { key: "packeta.label_format", value: "A6 on A4", description: "Zásilkovna: formát štítků (A6 on A4 = 4 štítky na A4, A6 on A6 = termotiskárna)" },
+  { key: "packeta.vat_pct", value: "21", description: "DPH v % (připočte se k ceně Zásilkovny)" },
   { key: "pickup.enabled", value: "true", description: "Osobní převzetí na FAČR (true/false)" },
   {
     key: "pickup.address",

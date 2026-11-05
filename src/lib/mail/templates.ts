@@ -76,6 +76,9 @@ function deliveryHtml(order: OrderWithItems, settings: Settings): string {
   if (order.deliveryMethod === "PICKUP") {
     return `<p><strong>Osobní převzetí:</strong> ${esc(settings.str("pickup.address"))}<br>${esc(settings.str("pickup.note"))}</p>`;
   }
+  if (order.deliveryMethod === "PACKETA") {
+    return `<p><strong>Výdejní místo Zásilkovny:</strong><br>${esc(order.packetaPointName)}${order.packetaPointAddress ? `<br>${esc(order.packetaPointAddress)}` : ""}</p>`;
+  }
   return `<p><strong>Doručovací adresa:</strong><br>${esc(order.firstName)} ${esc(order.lastName)}<br>${esc(order.street)}<br>${esc(formatZip(order.zip))} ${esc(order.city)}</p>`;
 }
 
@@ -211,7 +214,11 @@ export function shippedMail(order: OrderWithItems, settings: Settings, opts: { o
 ${order.trackingNumber ? `<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Číslo zásilky</td><td><strong>${esc(order.trackingNumber)}</strong></td></tr>` : ""}
 </table>
 ${deliveryHtml(order, settings)}
-<p>Zásilka obsahuje alkohol – při převzetí může dopravce ověřit věk 18+.</p>`,
+${
+  order.deliveryMethod === "PACKETA"
+    ? "<p>Až zásilka dorazí na výdejní místo, Zásilkovna vám pošle zprávu s kódem pro vyzvednutí. Zásilka obsahuje alkohol – při vyzvednutí prokažte věk 18+ dokladem totožnosti.</p>"
+    : "<p>Zásilka obsahuje alkohol – při převzetí může dopravce ověřit věk 18+.</p>"
+}`,
   );
   const text = `Dobrý den, ${order.firstName},\n\nobjednávku ${order.number} jsme předali dopravci.\nDopravce: ${order.carrier}\n${order.trackingNumber ? `Číslo zásilky: ${order.trackingNumber}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };

@@ -5,7 +5,9 @@ import { getSettings } from "@/lib/settings";
 import { formatCzk, formatDateTime, formatZip } from "@/lib/format";
 import { DELIVERY_LABEL, PAYMENT_LABEL, STATUS_LABEL, statusLabel } from "@/lib/labels";
 import { ADMIN_TRANSITIONS } from "@/lib/orders/transitions";
-import { StatusActions, NoteForm, AnonymizeForm } from "./OrderForms";
+import { StatusActions, NoteForm, AnonymizeForm, PacketaForm } from "./OrderForms";
+import { env } from "@/lib/env";
+import { packetDraft } from "@/lib/packeta";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata = { title: "Detail objednávky" };
@@ -17,6 +19,7 @@ const ACTION_LABEL: Record<string, string> = {
   anonymize: "Osobní údaje anonymizovány",
   payment_refunded: "Platba vrácena (GoPay)",
   duplicate_payment: "⚠ Druhá platba stejné objednávky (GoPay) – vrátit",
+  packeta_created: "Zásilka založena v Zásilkovně",
 };
 const SOURCE_LABEL: Record<string, string> = { system: "systém", gopay: "GoPay", admin: "administrace", customer: "zákazník" };
 
@@ -115,6 +118,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <>
                     Osobní převzetí: {settings.str("pickup.address")}
                   </>
+                ) : order.deliveryMethod === "PACKETA" ? (
+                  <>
+                    Zásilkovna – výdejní místo
+                    <br />
+                    <strong>{order.packetaPointName}</strong>
+                    <br />
+                    {order.packetaPointAddress}
+                    <br />
+                    <span className="text-muted">ID místa: {order.packetaPointId}</span>
+                  </>
                 ) : (
                   <>
                     {order.street}
@@ -204,7 +217,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             deliveryMethod={order.deliveryMethod}
             paymentMethod={order.paymentMethod}
             status={order.status}
+            packetaBarcodes={order.packetaBarcodes}
           />
+          {order.deliveryMethod === "PACKETA" && !order.anonymizedAt && order.status !== "CANCELLED" && (
+            <PacketaForm
+              orderId={order.id}
+              canCreate={order.status === "PAID"}
+              apiReady={!!env.packetaApiPassword}
+              barcodes={order.packetaBarcodes}
+              draft={packetDraft(order, settings)}
+            />
+          )}
           <NoteForm orderId={order.id} note={order.internalNote ?? ""} />
           {!order.anonymizedAt && (order.status === "COMPLETED" || order.status === "CANCELLED") && <AnonymizeForm orderId={order.id} />}
         </aside>

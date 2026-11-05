@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
 import { useSyncedPricedCart } from "@/components/cart/usePricedCart";
 import { formatCzk } from "@/lib/format";
+import { SkeletonLines } from "@/components/Loading";
 
 export function CartView() {
-  const { setQuantity, remove } = useCart();
+  const { setQuantity, remove, lines } = useCart();
   const { data, loading, error, ready, notices } = useSyncedPricedCart();
 
-  if (!ready || (loading && !data)) return <p className="mt-8 text-muted">Načítám košík…</p>;
+  if (!ready || (loading && !data)) return <SkeletonLines rows={Math.min(Math.max(lines.length, 1), 4)} />;
   if (error) return <p className="mt-8 text-danger">{error}</p>;
 
   if (!data || data.lines.length === 0) {
@@ -94,10 +95,18 @@ export function CartView() {
           <dt className="text-muted">Zboží</dt>
           <dd>{formatCzk(data.itemsTotalCzk)}</dd>
         </div>
-        <div className="flex justify-between">
-          <dt className="text-muted">Doprava na adresu</dt>
-          <dd>{formatCzk(data.shipping.SHIPPING)}</dd>
-        </div>
+        {data.shipping.PACKETA !== null && (
+          <div className="flex justify-between">
+            <dt className="text-muted">Zásilkovna – výdejní místo</dt>
+            <dd>{formatCzk(data.shipping.PACKETA)}</dd>
+          </div>
+        )}
+        {data.shipping.SHIPPING !== null && (
+          <div className="flex justify-between">
+            <dt className="text-muted">Kurýr na adresu</dt>
+            <dd>{formatCzk(data.shipping.SHIPPING)}</dd>
+          </div>
+        )}
         {data.pickupEnabled && (
           <div className="flex justify-between">
             <dt className="text-muted">nebo osobní převzetí na FAČR</dt>
@@ -105,8 +114,8 @@ export function CartView() {
           </div>
         )}
         <div className="flex justify-between border-t border-line pt-2 text-base font-bold">
-          <dt>Celkem s dopravou na adresu</dt>
-          <dd className="text-gold-light">{formatCzk(data.itemsTotalCzk + data.shipping.SHIPPING)}</dd>
+          <dt>Celkem s dopravou</dt>
+          <dd className="text-gold-light">{formatCzk(data.itemsTotalCzk + (data.shipping.PACKETA ?? data.shipping.SHIPPING ?? 0))}</dd>
         </div>
       </dl>
 

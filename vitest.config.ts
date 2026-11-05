@@ -24,6 +24,9 @@ export default defineConfig({
       META_PIXEL_ID: "",
       META_CAPI_TOKEN: "",
       TURNSTILE_SECRET_KEY: "",
+      // Zásilkovna: testy nikdy nevolají skutečné API (neexistující adresa, odpovědi se podvrhují)
+      PACKETA_API_PASSWORD: "test-heslo",
+      PACKETA_API_URL: "http://packeta.invalid/api/rest",
     },
   },
 });
