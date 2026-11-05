@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { AgeGate } from "@/components/AgeGate";
 import { AGE_COOKIE } from "@/lib/consent";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ScrollToHash } from "@/components/ScrollToHash";
 
 // Sklad, ceny a texty se čtou z databáze při každém požadavku
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function WebLayout({ children }: { children: React.ReactNod
       <SiteFooter settings={settings} />
       <AgeGate verified={ageVerified} />
       <CookieConsent ga4Id={env.ga4Id || undefined} metaPixelId={env.metaPixelId || undefined} />
+      <ScrollToHash />
     </CartProvider>
   );
 }

@@ -9,3 +9,6 @@ tests
 tests-e2e
 data
 backups
+
+# lokální přístupové údaje (QR 2FA apod.) – nikdy do gitu ani do nasazení
+.secrets/

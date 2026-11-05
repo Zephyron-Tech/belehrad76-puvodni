@@ -211,14 +211,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
 
         <aside className="space-y-6">
-          <StatusActions
-            orderId={order.id}
-            transitions={transitions}
-            deliveryMethod={order.deliveryMethod}
-            paymentMethod={order.paymentMethod}
-            status={order.status}
-            packetaBarcodes={order.packetaBarcodes}
-          />
           {order.deliveryMethod === "PACKETA" && !order.anonymizedAt && order.status !== "CANCELLED" && (
             <PacketaForm
               orderId={order.id}
@@ -228,6 +220,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               draft={packetDraft(order, settings)}
             />
           )}
+          <StatusActions
+            orderId={order.id}
+            transitions={transitions}
+            deliveryMethod={order.deliveryMethod}
+            paymentMethod={order.paymentMethod}
+            status={order.status}
+            packetaBarcodes={order.packetaBarcodes}
+          />
           <NoteForm orderId={order.id} note={order.internalNote ?? ""} />
           {!order.anonymizedAt && (order.status === "COMPLETED" || order.status === "CANCELLED") && <AnonymizeForm orderId={order.id} />}
         </aside>

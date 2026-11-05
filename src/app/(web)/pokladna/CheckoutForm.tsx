@@ -205,6 +205,19 @@ export function CheckoutForm(props: Props) {
         <fieldset>
           <legend className="font-serif text-2xl font-bold text-gold">Doprava</legend>
           <div className="mt-4 grid gap-3">
+            {data.pickupEnabled && (
+              <label className={`flex cursor-pointer items-start gap-3 border p-4 ${effectiveDelivery === "PICKUP" ? "border-gold bg-panel" : "border-line"}`}>
+                <input type="radio" name="delivery" checked={effectiveDelivery === "PICKUP"} onChange={() => setDelivery("PICKUP")} className="mt-1 accent-[var(--gold)]" />
+                <span className="flex-1">
+                  <span className="flex justify-between gap-4 font-semibold">
+                    Osobní převzetí na FAČR <span className="text-gold-light">zdarma</span>
+                  </span>
+                  <span className="block text-sm text-muted">
+                    {props.pickupAddress}. {props.pickupNote}
+                  </span>
+                </span>
+              </label>
+            )}
             {available("PACKETA") && (
               <label className={`flex cursor-pointer items-start gap-3 border p-4 ${effectiveDelivery === "PACKETA" ? "border-gold bg-panel" : "border-line"}`}>
                 <input type="radio" name="delivery" checked={effectiveDelivery === "PACKETA"} onChange={() => setDelivery("PACKETA")} className="mt-1 accent-[var(--gold)]" />
@@ -230,19 +243,6 @@ export function CheckoutForm(props: Props) {
                       ? `${formatCzk(props.boxShippingCzk)} za celou objednávku s boxem. ${data.boxDelivery}`
                       : `${formatCzk(props.boxShippingCzk)} za celou zásilku.`}{" "}
                     Při převzetí může dopravce ověřit věk 18+.
-                  </span>
-                </span>
-              </label>
-            )}
-            {data.pickupEnabled && (
-              <label className={`flex cursor-pointer items-start gap-3 border p-4 ${effectiveDelivery === "PICKUP" ? "border-gold bg-panel" : "border-line"}`}>
-                <input type="radio" name="delivery" checked={effectiveDelivery === "PICKUP"} onChange={() => setDelivery("PICKUP")} className="mt-1 accent-[var(--gold)]" />
-                <span className="flex-1">
-                  <span className="flex justify-between gap-4 font-semibold">
-                    Osobní převzetí na FAČR <span className="text-gold-light">zdarma</span>
-                  </span>
-                  <span className="block text-sm text-muted">
-                    {props.pickupAddress}. {props.pickupNote}
                   </span>
                 </span>
               </label>

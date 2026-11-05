@@ -21,3 +21,6 @@ playwright-report/
 .vercel
 .env*
 !.env.example
+
+# lokální přístupové údaje (QR 2FA apod.) – nikdy do gitu ani do nasazení
+.secrets/

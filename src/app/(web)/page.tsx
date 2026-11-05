@@ -27,7 +27,7 @@ export default async function HomePage() {
   return (
     <>
       {/* Úvod */}
-      <section className="relative overflow-hidden border-b border-line">
+      <section id="edice" className="relative scroll-mt-20 overflow-hidden border-b border-line">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/img/box.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/70 to-ink" />

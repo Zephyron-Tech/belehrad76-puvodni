@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CartButton } from "./cart/CartButton";
 
 const NAV = [
-  { href: "/#pribeh", label: "Edice" },
+  { href: "/#edice", label: "Edice" },
   { href: "/eshop", label: "E-shop" },
   { href: "/#vecer", label: "Slavnostní večer" },
   { href: "/#nadace", label: "Nadace" },
