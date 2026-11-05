@@ -57,7 +57,7 @@ export const env = {
     };
   },
   get mailFrom() {
-    return read("MAIL_FROM", "Mistři Evropy 1976 <objednavky@belehrad76.cz>");
+    return read("MAIL_FROM", "Mistři Evropy 1976 <info@belehrad76.cz>");
   },
   get mailOutboxDir() {
     return read("MAIL_OUTBOX_DIR", ".mail-outbox");

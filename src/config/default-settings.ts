@@ -16,6 +16,11 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
 
   // Kontakty
   { key: "contact.email", value: "info@belehrad76.cz", description: "Kontaktní e-mail na webu (DOPLNIT skutečný)" },
+  {
+    key: "mail.reply_to",
+    value: "jan.kukula@petiteeiffel.cz, petr.safarcik@pam-group.cz",
+    description: "Kam jdou odpovědi zákazníků na e-maily z e-shopu (víc adres oddělit čárkou; prázdné = contact.email)",
+  },
   { key: "contact.phone", value: "", description: "Kontaktní telefon na webu (prázdné = nezobrazovat)" },
   {
     key: "owner.notify_email",
