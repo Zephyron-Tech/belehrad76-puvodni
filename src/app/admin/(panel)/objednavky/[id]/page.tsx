@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
-import { formatCzk, formatDateTime, formatZip } from "@/lib/format";
-import { DELIVERY_LABEL, PAYMENT_LABEL, STATUS_LABEL, statusLabel } from "@/lib/labels";
+import { formatCzk, formatDateTime, formatDuration, formatZip } from "@/lib/format";
+import { DELIVERY_LABEL, PAYMENT_LABEL, STATUS_LABEL, statusLabel, transferVerifyLabel } from "@/lib/labels";
 import { ADMIN_TRANSITIONS } from "@/lib/orders/transitions";
-import { StatusActions, NoteForm, AnonymizeForm, PacketaForm } from "./OrderForms";
+import { StatusActions, NoteForm, AnonymizeForm, PacketaForm, TransferVerifyForm } from "./OrderForms";
 import { env } from "@/lib/env";
 import { packetDraft } from "@/lib/packeta";
 import { requireAdmin } from "@/lib/auth";
@@ -20,8 +20,17 @@ const ACTION_LABEL: Record<string, string> = {
   payment_refunded: "Platba vrácena (GoPay)",
   duplicate_payment: "⚠ Druhá platba stejné objednávky (GoPay) – vrátit",
   packeta_created: "Zásilka založena v Zásilkovně",
+  payment_claimed: "Zákazník: „Zaplatil jsem“",
+  verify_manual: "Platba převodem: nezaplaceno – vyřeší admin",
+  payment_reminder: "Upomínka platby odeslána zákazníkovi",
 };
-const SOURCE_LABEL: Record<string, string> = { system: "systém", gopay: "GoPay", admin: "administrace", customer: "zákazník" };
+const SOURCE_LABEL: Record<string, string> = {
+  system: "systém",
+  gopay: "GoPay",
+  admin: "administrace",
+  customer: "zákazník",
+  verifier: "ověřovací e-mail",
+};
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // Ověření v každé stránce, ne jen v layoutu: layout a stránka se vykreslují souběžně,
@@ -39,6 +48,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   if (!order) notFound();
 
   const transitions = ADMIN_TRANSITIONS[order.status];
+  const verifyLabel = transferVerifyLabel(order);
 
   return (
     <div>
@@ -48,6 +58,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="mt-2 flex flex-wrap items-center gap-4">
         <h1 className="font-serif text-3xl font-bold text-gold">Objednávka {order.number}</h1>
         <span className="border border-gold/60 px-3 py-1 text-sm text-gold-light">{statusLabel(order.status, order.deliveryMethod)}</span>
+        {verifyLabel && <span className="border border-warn/60 px-3 py-1 text-sm text-warn">{verifyLabel}</span>}
+        <span className="text-sm text-muted">v tomto stavu {formatDuration(order.stateChangedAt)}</span>
         {order.anonymizedAt && <span className="border border-line px-3 py-1 text-sm text-muted">anonymizováno</span>}
       </div>
       <p className="mt-1 text-sm text-muted">
@@ -211,6 +223,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
 
         <aside className="space-y-6">
+          {verifyLabel && (
+            <TransferVerifyForm
+              orderId={order.id}
+              label={verifyLabel}
+              inStateFor={formatDuration(order.stateChangedAt)}
+              claimedAt={order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : null}
+              verifyMailSentAt={order.verifyMailSentAt ? formatDateTime(order.verifyMailSentAt) : null}
+              reminders={order.reminderCount > 0 ? `${order.reminderCount}× (poslední ${formatDateTime(order.reminderSentAt)})` : null}
+              verifyEmail={settings.str("payment.verify_email")}
+            />
+          )}
           {order.deliveryMethod === "PACKETA" && !order.anonymizedAt && order.status !== "CANCELLED" && (
             <PacketaForm
               orderId={order.id}

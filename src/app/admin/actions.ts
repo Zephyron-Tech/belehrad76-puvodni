@@ -13,6 +13,7 @@ import { anonymizeOrder } from "@/lib/gdpr";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { AppError, userMessage } from "@/lib/errors";
 import { createPacketsForOrder } from "@/lib/packeta";
+import { resolveVerification } from "@/lib/orders/transfer-verify";
 
 export type ActionState = { error?: string; ok?: string } | undefined;
 
@@ -170,4 +171,23 @@ export async function createPacketsAction(_: ActionState, form: FormData): Promi
     revalidatePath(`/admin/objednavky/${orderId}`);
     return { error: userMessage(err, "Zásilku se nepodařilo založit.") };
   }
+}
+
+/** Ověření platby převodem z administrace: Nezaplaceno – vyřeším sám / poslat upomínku (SPECIFIKACE 5b). */
+export async function verifyAction(_: ActionState, form: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const ip = await getClientIp();
+  const orderId = Number(form.get("orderId"));
+  const action = String(form.get("action"));
+  const actor = String(form.get("actor") ?? "").trim() || null;
+  if (!Number.isInteger(orderId) || (action !== "manual" && action !== "remind")) return { error: "Neplatný požadavek." };
+  try {
+    const result = await resolveVerification({ orderId }, action, { source: "admin", actor, ip });
+    if (!result.done) return { error: result.reason === "already-paid" ? "Objednávka je už zaplacená." : "Objednávku nelze ověřovat." };
+  } catch (err) {
+    if (!(err instanceof AppError)) console.error("[admin] verify action failed", err);
+    return { error: userMessage(err, "Akci se nepodařilo provést.") };
+  }
+  revalidatePath(`/admin/objednavky/${orderId}`);
+  return { ok: action === "remind" ? "Upomínka odeslána zákazníkovi." : "Označeno: nezaplaceno – řešíte sami." };
 }

@@ -15,7 +15,10 @@ type Props = {
   pickupAddress: string;
   pickupNote: string;
   eveningDate: string;
-  transferDays: number;
+  /** Jak dlouho obvykle trvá ověření platby převodem (payment.verify_time) */
+  verifyTime: string;
+  /** „Pokud platbu neobdržíme do 7 dní, objednávku zrušíme.“ – jen informace */
+  transferCancelNotice: string;
   gopayMinutes: number;
   boxShippingCzk: number;
   /** Platba převodem / QR kódem (nastavení payment.bank_transfer) – teď vypnutá, platí se jen bránou */
@@ -309,7 +312,8 @@ export function CheckoutForm(props: Props) {
                 <span>
                   <span className="block font-semibold">Bankovním převodem / QR kódem</span>
                   <span className="block text-sm text-muted">
-                    Platební údaje a QR kód dostanete po odeslání objednávky. Zboží držíme {props.transferDays} dní.
+                    Platební údaje a QR kód uvidíte hned po odeslání objednávky.{props.verifyTime && ` Ověření platby obvykle trvá ${props.verifyTime}.`}
+                    {props.transferCancelNotice && ` ${props.transferCancelNotice}`}
                   </span>
                 </span>
               </label>

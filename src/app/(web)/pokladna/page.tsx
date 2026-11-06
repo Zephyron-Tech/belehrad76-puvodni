@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings";
 import { env } from "@/lib/env";
+import { transferCancelNotice } from "@/lib/labels";
 import { CheckoutForm } from "./CheckoutForm";
 
 export const metadata: Metadata = { title: "Objednávka", robots: { index: false } };
@@ -14,7 +15,8 @@ export default async function CheckoutPage() {
         pickupAddress={settings.str("pickup.address")}
         pickupNote={settings.text("pickup.note")}
         eveningDate={settings.str("evening.date")}
-        transferDays={settings.num("reservation.transfer_days")}
+        verifyTime={settings.str("payment.verify_time")}
+        transferCancelNotice={transferCancelNotice(settings.num("reservation.transfer_days"))}
         gopayMinutes={settings.num("reservation.gopay_minutes")}
         boxShippingCzk={settings.num("shipping.box_czk")}
         bankTransferEnabled={settings.bool("payment.bank_transfer")}

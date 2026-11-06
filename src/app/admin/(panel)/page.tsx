@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { formatCzk, formatDateTime } from "@/lib/format";
-import { DELIVERY_LABEL, STATUS_LABEL, statusLabel } from "@/lib/labels";
+import { formatCzk, formatDateTime, formatDuration } from "@/lib/format";
+import { DELIVERY_LABEL, STATUS_LABEL, statusLabel, transferVerifyLabel } from "@/lib/labels";
 import { maybeExpireStaleOrders } from "@/lib/orders/expire";
 import { requireAdmin } from "@/lib/auth";
 
@@ -171,6 +171,8 @@ export default async function OrdersPage({ searchParams }: Props) {
                   <span className={`inline-block border px-2 py-0.5 text-xs whitespace-nowrap ${STATUS_STYLE[o.status]}`}>
                     {statusLabel(o.status, o.deliveryMethod)}
                   </span>
+                  {transferVerifyLabel(o) && <span className="mt-1 block text-xs text-warn">{transferVerifyLabel(o)}</span>}
+                  <span className="mt-1 block text-xs whitespace-nowrap text-muted">{formatDuration(o.stateChangedAt)}</span>
                 </td>
               </tr>
             ))}

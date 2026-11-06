@@ -2,14 +2,16 @@ import { prisma } from "../db";
 import { cancelOrder } from "./transitions";
 import { syncOrderPayments } from "./payments";
 import { sendPaidNotifications } from "./notifications";
+import { resendPendingVerifications } from "./transfer-verify";
 
 /**
- * Zruší nezaplacené objednávky po vypršení rezervace a vrátí boxy na sklad.
- * U plateb přes GoPay se před zrušením ještě ověří stav platby.
+ * Zruší nezaplacené objednávky přes GoPay po vypršení rezervace a vrátí boxy na sklad
+ * (před zrušením se ještě ověří stav platby v GoPay). Objednávky převodem se automaticky neruší –
+ * čekají na ověřovatele, zrušit je může jen admin (SPECIFIKACE 5b).
  */
 export async function expireStaleOrders(now = new Date()): Promise<number> {
   const stale = await prisma.order.findMany({
-    where: { status: "PENDING", reservedUntil: { lt: now } },
+    where: { status: "PENDING", paymentMethod: "GOPAY", reservedUntil: { lt: now } },
     select: { id: true, paymentMethod: true },
     take: 200,
   });
@@ -62,4 +64,6 @@ export function maybeExpireStaleOrders() {
   if (Date.now() - lastRun < 60_000) return;
   lastRun = Date.now();
   expireStaleOrders().catch((err) => console.error("[expire] failed", err));
+  // Ověřovací e-maily plateb převodem každých 24 h – cron na Vercelu (Hobby) běží jen 1× denně
+  resendPendingVerifications().catch((err) => console.error("[verify] resend failed", err));
 }

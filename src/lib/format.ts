@@ -53,3 +53,14 @@ export function typo(text: string): string {
     .replace(/(?<=^|[\s („"])([kKsSvVzZoOuUaAiI])[ \t]+(?=\S)/g, `$1${NBSP}`)
     .replace(/(\d)[ \t]+(%|Kč|ks|dní|dnů|let|lahví|lahve|boxů|boxy|hráčů|minut)(?=$|[\s.,;:!?)–])/g, `$1${NBSP}$2`);
 }
+
+/** Doba od okamžiku do teď česky: „12 min“, „3 h 20 min“, „5 dní 3 h“. */
+export function formatDuration(since: Date | null | undefined, now = new Date()): string {
+  if (!since) return "";
+  const minutes = Math.max(0, Math.floor((now.getTime() - since.getTime()) / 60_000));
+  if (minutes < 60) return `${minutes}${NBSP}min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}${NBSP}h ${minutes % 60}${NBSP}min`;
+  const days = Math.floor(hours / 24);
+  return `${days}${NBSP}${plural(days, "den", "dny", "dní")} ${hours % 24}${NBSP}h`;
+}

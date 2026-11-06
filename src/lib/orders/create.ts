@@ -6,6 +6,7 @@ import { audit } from "../audit";
 import { CheckoutError, OutOfStockError } from "../errors";
 import { reserveStock } from "./stock";
 import { sendOrderReceived } from "./notifications";
+import { sendVerifyMail } from "./transfer-verify";
 
 /** Čísla objednávek = variabilní symbol: 2600001, 2600002, … */
 const ORDER_NUMBER_BASE = 2_600_000;
@@ -172,10 +173,10 @@ export async function createOrder(raw: unknown, ip: string | null) {
         : "Lahve bez boxu posíláme Zásilkovnou na výdejní místo – zvolte prosím jiný způsob dopravy.",
     );
   }
-  const reservationMs =
-    input.paymentMethod === "GOPAY"
-      ? settings.num("reservation.gopay_minutes") * 60_000
-      : settings.num("reservation.transfer_days") * 24 * 3_600_000;
+  // GoPay: box se drží po dobu platby. Převod: bez lhůty – box se drží, dokud objednávku neověří ověřovatel
+  // nebo ji nezruší admin (SPECIFIKACE 5b).
+  const isTransfer = input.paymentMethod === "BANK_TRANSFER";
+  const reservedUntil = isTransfer ? null : new Date(Date.now() + settings.num("reservation.gopay_minutes") * 60_000);
 
   const isShipping = input.deliveryMethod === "SHIPPING";
 
@@ -212,7 +213,8 @@ export async function createOrder(raw: unknown, ip: string | null) {
           trackingConsent: input.tracking?.consent ?? false,
           fbp: input.tracking?.consent ? input.tracking.fbp : null,
           fbc: input.tracking?.consent ? input.tracking.fbc : null,
-          reservedUntil: new Date(Date.now() + reservationMs),
+          reservedUntil,
+          ...(isTransfer ? { verifyToken: crypto.randomBytes(24).toString("base64url"), verifyState: "WAITING" as const } : {}),
           items: {
             create: cart.lines.map((l) => ({
               productId: l.productId,
@@ -252,6 +254,10 @@ export async function createOrder(raw: unknown, ip: string | null) {
   }
 
   await sendOrderReceived(order.id).catch((err) => console.error("[mail] order received failed", err));
+  if (order.paymentMethod === "BANK_TRANSFER") {
+    // Ověřovateli hned po objednávce; při chybě ho dorovná opakování (resendPendingVerifications)
+    await sendVerifyMail(order.id).catch((err) => console.error("[mail] verify mail failed", err));
+  }
 
   return order;
 }

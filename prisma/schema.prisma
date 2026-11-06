@@ -30,6 +30,14 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+/// Ověřování platby převodem (SPECIFIKACE 5b)
+enum TransferVerifyState {
+  /// Čeká na ověřovatele – ověřovací e-mail se opakuje každých 24 h
+  WAITING
+  /// Ověřovatel zvolil „Nezaplaceno – vyřeším sám“, řeší admin v administraci
+  MANUAL
+}
+
 enum DeliveryMethod {
   /// Kurýr na adresu (objednávka s boxem, nebo kusovky dražší než kurýr)
   SHIPPING
@@ -123,6 +131,19 @@ model Order {
   packetaBarcodes     String[]  @default([])
   /// Probíhá zakládání zásilek (pojistka proti dvojímu založení při dvojkliku)
   packetaRequestedAt  DateTime?
+
+  // Platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)
+  /// Tajný token odkazů v ověřovacím e-mailu (Zaplaceno / Nezaplaceno) – fungují bez přihlášení
+  verifyToken       String?              @unique
+  verifyState       TransferVerifyState?
+  /// Kdy odešel poslední ověřovací e-mail (další za 24 h, dokud ověřovatel nerozhodne)
+  verifyMailSentAt  DateTime?
+  /// Zákazník klikl „Zaplatil jsem“ (jen informace, stav objednávky nemění)
+  paymentClaimedAt  DateTime?
+  reminderSentAt    DateTime?
+  reminderCount     Int                  @default(0)
+  /// Kdy se naposledy změnil stav objednávky nebo stav ověření („jak dlouho je v posledním stavu“)
+  stateChangedAt    DateTime             @default(now())
 
   // Fakturační údaje (volitelné)
   companyName String?

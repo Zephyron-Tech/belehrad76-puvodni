@@ -1,7 +1,8 @@
 import type { OrderStatus, Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "./db";
 
-export type ActionSource = "system" | "gopay" | "admin" | "customer";
+/** verifier = odkaz z ověřovacího e-mailu platby převodem (bez přihlášení) */
+export type ActionSource = "system" | "gopay" | "admin" | "customer" | "verifier";
 
 export type ActionContext = {
   source: ActionSource;

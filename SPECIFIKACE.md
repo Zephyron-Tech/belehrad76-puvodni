@@ -80,11 +80,11 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
   - Smíšený košík (box + kusovky): doprava 490 Kč za box plus 100 Kč za každou kusovku (potvrzeno).
   - Dopravce vybírá někdo jiný. Adresa se zadává ručně a dopravce se doplní, až bude znám.
   - Ceny dopravy jsou v konfigurační tabulce v databázi.
-- Platba: karta (GoPay), bankovní tlačítko (GoPay) a ruční převod s QR kódem, viz bod 5.
+- Platba: karta (GoPay), bankovní tlačítko (GoPay) a ruční převod s QR kódem s ověřováním platby e-mailem, viz body 5 a 5b.
 
 ### 4.3 Po objednávce
 - **Platba proběhla**: stav „zaplaceno“, odečtení skladu, e-mail s potvrzením platby a PDF s informací o zaplacení (objednávka, částka, způsob platby, prodávající, datum). Potvrzení platby se generuje až po úspěšné platbě. Žádná faktura se negeneruje.
-- Okamžitě po vytvoření objednávky přijde krátký e-mail „objednávka přijata“ s údaji k platbě (u převodu).
+- Okamžitě po vytvoření objednávky přijde krátký e-mail „objednávka přijata“ s údaji k platbě (u převodu s QR kódem a tlačítkem „Zaplatil jsem“, viz 5b).
 - Provozovatel (Petite Eiffel) dostane e-mail s kompletními údaji o každé zaplacené objednávce (zboží, doprava, adresa nebo osobní převzetí, kontakt, zájem o večer). Podle toho zásilky vyřizuje.
 - E-mail o odeslání zásilky (s dopravcem a číslem zásilky) se posílá automaticky při přepnutí objednávky na „odeslaná“ v administraci (viz 4.4).
 
@@ -93,7 +93,7 @@ Plnohodnotná administrace (úprava textů, cen, fotek) se nevytváří. Je jen 
 - **Přihlášení (kvůli GDPR):** e-mail a heslo (hash), povinné dvoufázové ověření (2FA), omezení pokusů, automatické odhlášení po nečinnosti, **jeden společný účet** pro všechny, kdo objednávky vyřizují (potvrzeno), bez rolí a správy uživatelů. Přihlašovací údaje a 2FA se předávají jen oprávněným osobám a heslo jde změnit zásahem v databázi. Celá sekce `/admin` je za přihlášením a není indexovatelná. Bez přihlášení se nedá dostat k žádnému osobnímu údaji.
 - **Seznam objednávek:** filtr podle stavu, hledání (číslo, jméno, e-mail), řazení podle data, zobrazení způsobu platby a dopravy.
 - **Detail objednávky:** zboží, doprava, kontakt a adresa, fakturační údaje, zájem o večer, poznámka zákazníka, interní poznámka, historie změn.
-- **Stavy objednávky:** přijatá (čeká na platbu), zaplacená, odeslaná, dokončená, zrušená. Platba kartou nebo přes GoPay přepne stav na „zaplacená“ automaticky. U ručního převodu to provozovatel přepne tlačítkem po připsání peněz. Změna na „zaplacená“ jednorázově odečte sklad boxů a odešle potvrzení platby s PDF.
+- **Stavy objednávky:** přijatá (čeká na platbu), zaplacená, odeslaná, dokončená, zrušená. Platba kartou nebo přes GoPay přepne stav na „zaplacená“ automaticky. U ručního převodu to provozovatel přepne tlačítkem po připsání peněz, nebo odkazem „Zaplaceno“ z ověřovacího e-mailu (viz 5b). U každé objednávky je vidět, jak dlouho je v posledním stavu. Změna na „zaplacená“ jednorázově odečte sklad boxů a odešle potvrzení platby s PDF.
 - **Odeslání:** při přepnutí na „odeslaná“ se zadá dopravce a číslo zásilky a zákazníkovi automaticky odejde e-mail o odeslání (potvrzeno). U osobního převzetí odejde e-mail „připraveno k převzetí“.
 - **Export:** CSV objednávek pro účetnictví a CSV zájemců o večer (jen zaplacené objednávky se zájmem, s počtem boxů = počtem vstupů).
 - **Záznam změn (audit log):** kdy a z jaké IP adresy se změnil stav objednávky nebo se vyexportovala data. Protože je účet společný, nelze poznat konkrétní osobu. Volitelně se při změně zadá jméno nebo iniciály.
@@ -109,7 +109,7 @@ Plnohodnotná administrace (úprava textů, cen, fotek) se nevytváří. Je jen 
 
 **Integrace:** GoPay REST API (vytvoření platby, redirect nebo inline, notifikace o stavu na webhook). Stav platby se vždy ověřuje dotazem na API, nespoléháme jen na návrat zákazníka.
 
-**Platební metody:** platební karta (včetně Apple Pay/Google Pay, pokud brána aktivuje), rychlé bankovní platby (převod) a QR platba, pokud ji GoPay pro obchod zapne. Stav těchto plateb se mění automaticky. K tomu **ruční převod na účet 303642799/0300** s variabilním symbolem = číslo objednávky a QR kódem (SPD formát). Objednávka čeká na platbu a provozovatel ji po připsání peněz v administraci přepne na „zaplacená“ (viz 4.4).
+**Platební metody:** platební karta (včetně Apple Pay/Google Pay, pokud brána aktivuje), rychlé bankovní platby (převod) a QR platba, pokud ji GoPay pro obchod zapne. Stav těchto plateb se mění automaticky. K tomu **ruční převod na účet 303642799/0300** s variabilním symbolem = číslo objednávky a QR kódem (SPD formát). Objednávka čeká na platbu a ověřuje se ručně podle bodu 5b.
 
 ### Co musíte zařídit (checklist pro vás)
 1. **Smlouva s GoPay** na firmu Petite Eiffel, s.r.o. (IČO 10788433). Přes web gopay.com vyplnit žádost o e-shopovou bránu.
@@ -122,6 +122,42 @@ Plnohodnotná administrace (úprava textů, cen, fotek) se nevytváří. Je jen 
 8. **Doména a HTTPS**: ostrá doména (belehrad76.cz / belehrad1976.cz) s platným certifikátem. Brána běží jen na HTTPS.
 9. **Poplatky a vyplácení**: zjistěte sazbu za kartu/bankovní platbu a dobu výplat na účet, ať víte, kdy přijdou peníze.
 10. **Test ostrého provozu**: po zapnutí ostré brány proběhne jedna reálná platba malé částky a následné vrácení.
+
+## 5b. Platba převodem s ověřováním e-mailem (potvrzeno 6. 11. 2026)
+
+Banka není napojená, platbu převodem ověřuje člověk s přístupem k účtu (dále **ověřovatel**). E-mail ověřovatele je
+v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
+
+1. **Pokladna** nabízí platební bránu GoPay a **bankovní převod / QR kód** (`payment.bank_transfer = true`).
+2. **Po vytvoření objednávky převodem** zákazník vidí stránku objednávky a dostane e-mail „Objednávka přijata“:
+   číslo účtu, IBAN, variabilní symbol (= číslo objednávky), částka, QR kód (SPD) a tlačítko **„Zaplatil jsem“**.
+   Zároveň **hned** odejde **ověřovací e-mail** ověřovateli.
+3. **„Zaplatil jsem“** je pro zákazníka jen ujištění: zobrazí „Děkujeme, platbu ověříme. Ověření platby obvykle trvá
+   5–9 hodin.“ Na stavu objednávky nic nemění, jen se zaznamená čas kliknutí (informace pro ověřovatele a admina).
+   Věta o době ověření (`payment.verify_time`, „5–9 hodin“) je i u platebních údajů, v e-mailu „Objednávka přijata“
+   a v upomínce.
+4. **Ověřovací e-mail** obsahuje vše pro kontrolu v internetovém bankovnictví: variabilní symbol a přesnou částku
+   (zvýrazněné), účet/IBAN příjemce, datum objednávky, jméno, e-mail, telefon, firmu/IČO, položky, doručení
+   a případně čas, kdy zákazník klikl „Zaplatil jsem“. Obsahuje tři odkazy, které fungují **bez přihlášení**
+   (z mobilu). Odkaz otevře stránku se shrnutím a tlačítkem pro potvrzení – samotné otevření odkazu nic nemění
+   (antivirové skenery pošty odkazy otevírají samy):
+   - **Zaplaceno** → objednávka je zaplacená, odečte se sklad, zákazník dostane potvrzení platby s PDF
+     a provozovatel upozornění na zaplacenou objednávku (stejně jako u GoPay).
+   - **Nezaplaceno – vyřeším sám** → opakované ověřovací e-maily skončí, objednávka dál čeká na platbu
+     a admin ji řeší v administraci.
+   - **Nezaplaceno – poslat upomínku** → zákazníkovi odejde upomínka (bod 6) a ověřování běží dál.
+5. **Opakování:** dokud ověřovatel nezvolí žádnou možnost, přijde mu ověřovací e-mail znovu každých 24 hodin.
+6. **Upomínka zákazníkovi:** platba zatím nedorazila, platební údaje, QR kód a tlačítko „Zaplatil jsem“,
+   **bez splatnosti**. Po upomínce začne ověřování znovu (další ověřovací e-mail za 24 hodin).
+7. **Objednávky převodem se automaticky neruší.** Box zůstává rezervovaný, dokud objednávka není zaplacená,
+   nebo ji **přihlášený admin** v administraci nezruší (zrušení uvolní box). Úplné zamítnutí (zrušení) jde jen
+   s přihlášením. Objednávky přes GoPay se po vypršení rezervace ruší jako dosud.
+   Zákazníkovi se přesto u platby převodem všude (pokladna, stránka objednávky, e-mail „Objednávka přijata“,
+   upomínka) uvádí „Pokud platbu neobdržíme do 7 dní (do datum), objednávku zrušíme.“ – **jen informace**,
+   automaticky se nic neruší. Po upomínce se 7 dní počítá od upomínky (`reservation.transfer_days`).
+8. **Administrace:** u objednávky převodem stav ověření (čeká na ověření / nezaplaceno – řeší admin / upomínka
+   odeslána), čas „Zaplatil jsem“ a **jak dlouho je objednávka v posledním stavu**; totéž v seznamu objednávek.
+   Ruční akce Zaplaceno / Vyřeším sám / Poslat upomínku jsou i v detailu objednávky.
 
 ## 6. Právní a provozní náležitosti (pro prodej alkoholu)
 - Obchodní podmínky, ochrana osobních údajů (GDPR), cookies lišta s granulárním souhlasem (analytika a Meta Pixel až po souhlasu), reklamační řád, poučení o odstoupení od smlouvy (14 dnů; u spirituálií je nutné ověřit výjimky).

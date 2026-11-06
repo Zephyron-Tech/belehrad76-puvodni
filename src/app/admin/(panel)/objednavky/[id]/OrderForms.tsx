@@ -3,7 +3,14 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { DeliveryMethod, OrderStatus, PaymentMethod } from "@prisma/client";
 import type { PacketDraft } from "@/lib/packeta";
-import { anonymizeAction, changeStatusAction, createPacketsAction, saveNoteAction, type ActionState } from "../../../actions";
+import {
+  anonymizeAction,
+  changeStatusAction,
+  createPacketsAction,
+  saveNoteAction,
+  verifyAction,
+  type ActionState,
+} from "../../../actions";
 
 const inputCls = "mt-1 w-full border border-line bg-ink px-3 py-2 text-sm text-cream focus:border-gold focus:outline-none";
 
@@ -400,3 +407,64 @@ export function PacketaForm(props: {
   );
 }
 
+/** Platba převodem – stav ověření a ruční akce (Zaplaceno je v „Změnit stav“ jako Platba přijata). */
+export function TransferVerifyForm(props: {
+  orderId: number;
+  label: string;
+  inStateFor: string;
+  claimedAt: string | null;
+  verifyMailSentAt: string | null;
+  reminders: string | null;
+  verifyEmail: string;
+}) {
+  const [state, action, pending] = useActionState(verifyAction, undefined);
+  return (
+    <section className="border border-gold/50 bg-panel p-5">
+      <h2 className="font-serif text-lg font-bold text-gold">Platba převodem</h2>
+      <p className="mt-2 text-sm">
+        <span className="font-semibold text-cream">{props.label}</span>
+        <span className="block text-xs text-muted">v tomto stavu {props.inStateFor}</span>
+      </p>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
+        <dt className="text-muted">„Zaplatil jsem“</dt>
+        <dd>{props.claimedAt ?? "zatím ne"}</dd>
+        <dt className="text-muted">Ověřovací e-mail</dt>
+        <dd>
+          {props.verifyMailSentAt ?? "zatím neodešel"}
+          {props.verifyEmail && <span className="block text-muted">{props.verifyEmail}</span>}
+        </dd>
+        {props.reminders && (
+          <>
+            <dt className="text-muted">Upomínky</dt>
+            <dd>{props.reminders}</dd>
+          </>
+        )}
+      </dl>
+      <form action={action} className="mt-4 space-y-2">
+        <input type="hidden" name="orderId" value={props.orderId} />
+        <label className="block text-xs text-muted">
+          Jméno / iniciály (nepovinné)
+          <input name="actor" maxLength={40} className={inputCls} />
+        </label>
+        <button
+          name="action"
+          value="remind"
+          disabled={pending}
+          className="w-full border border-gold px-4 py-2 text-sm font-semibold text-gold-light hover:bg-gold/10 disabled:opacity-60"
+        >
+          Nezaplaceno – poslat upomínku
+        </button>
+        <button
+          name="action"
+          value="manual"
+          disabled={pending}
+          className="w-full border border-line px-4 py-2 text-sm text-cream hover:border-gold disabled:opacity-60"
+        >
+          Nezaplaceno – vyřeším sám
+        </button>
+        <p className="text-xs text-muted">Zaplaceno: tlačítko „Platba přijata“ níže. Zrušení objednávky uvolní box.</p>
+      </form>
+      <Feedback state={state} />
+    </section>
+  );
+}

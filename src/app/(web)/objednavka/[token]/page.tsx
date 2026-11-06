@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { formatCzk, formatDateTime, formatZip } from "@/lib/format";
 import { formatIban, qrDataUrl, transferInstructions } from "@/lib/bank";
-import { DELIVERY_LABEL, EVENING_ENTRY_NOTE, PAYMENT_LABEL, statusLabel } from "@/lib/labels";
+import { DELIVERY_LABEL, EVENING_ENTRY_NOTE, PAYMENT_LABEL, statusLabel, transferCancelNotice } from "@/lib/labels";
 import { syncOrderPayments } from "@/lib/orders/payments";
 import { purchaseEventId } from "@/lib/meta-capi";
 import { env } from "@/lib/env";
@@ -16,11 +16,11 @@ export const metadata: Metadata = { title: "Objednávka", robots: { index: false
 
 type Props = {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ platba?: string }>;
+  searchParams: Promise<{ platba?: string; zaplaceno?: string }>;
 };
 
 export default async function OrderPage({ params, searchParams }: Props) {
-  const [{ token }, { platba }] = await Promise.all([params, searchParams]);
+  const [{ token }, { platba, zaplaceno }] = await Promise.all([params, searchParams]);
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) notFound();
 
   let order = await prisma.order.findUnique({ where: { publicToken: token }, include: { items: true } });
@@ -35,10 +35,15 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const settings = await getSettings();
   const isPaid = order.status === "PAID" || order.status === "SHIPPED" || order.status === "COMPLETED";
   const isPending = order.status === "PENDING";
-  const expired = !!order.reservedUntil && order.reservedUntil < new Date();
+  // Převod nemá lhůtu (čeká na ověřovatele, SPECIFIKACE 5b) – „vypršelo“ jen u GoPay
+  const expired = order.paymentMethod === "GOPAY" && !!order.reservedUntil && order.reservedUntil < new Date();
+  const verifyTime = settings.str("payment.verify_time");
+  // Jen informace – automaticky se nic neruší; po upomínce se počítá od upomínky
+  const cancelNotice = transferCancelNotice(settings.num("reservation.transfer_days"), order.reminderSentAt ?? order.createdAt);
+  const claimed = !!order.paymentClaimedAt || zaplaceno === "1";
 
   const transfer =
-    isPending && order.paymentMethod === "BANK_TRANSFER" && !expired
+    isPending && order.paymentMethod === "BANK_TRANSFER"
       ? transferInstructions(settings.str("bank.account"), order.totalCzk, order.number, settings.str("seller.name"))
       : null;
   const qr = transfer ? await qrDataUrl(transfer.spd) : null;
@@ -83,10 +88,19 @@ export default async function OrderPage({ params, searchParams }: Props) {
 
       {isPending && transfer && (
         <>
-          <h1 className="mt-1 font-serif text-4xl font-bold text-gold">Objednávka přijata</h1>
+          <h1 className="mt-1 font-serif text-4xl font-bold text-gold">{claimed ? "Děkujeme, platbu ověříme" : "Objednávka přijata"}</h1>
           <p className="mt-4 text-lg text-cream/85">
-            Děkujeme. Zaplaťte prosím převodem nebo naskenujte QR kód v bankovní aplikaci. Údaje jsme poslali i na{" "}
-            <strong className="text-cream">{order.email}</strong>.
+            {claimed ? (
+              <>
+                Jakmile platbu uvidíme na účtu, pošleme vám potvrzení na <strong className="text-cream">{order.email}</strong>.
+                {verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>}
+              </>
+            ) : (
+              <>
+                Zaplaťte prosím převodem nebo naskenujte QR kód v bankovní aplikaci. Údaje jsme poslali i na{" "}
+                <strong className="text-cream">{order.email}</strong>.
+              </>
+            )}
           </p>
           <div className="mt-8 grid gap-6 border border-gold/50 bg-panel p-6 sm:grid-cols-[1fr_auto]">
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
@@ -98,30 +112,32 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <dd className="font-semibold text-cream">{transfer.variableSymbol}</dd>
               <dt className="text-muted">Částka</dt>
               <dd className="font-semibold text-gold-light">{formatCzk(transfer.amountCzk)}</dd>
-              <dt className="text-muted">Zaplaťte do</dt>
-              <dd className="text-cream">{formatDateTime(order.reservedUntil)}</dd>
             </dl>
             {qr && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qr} alt="QR kód pro platbu" width={180} height={180} className="mx-auto bg-white p-1" />
             )}
           </div>
-          <p className="mt-3 text-sm text-muted">
-            Po připsání platby vám pošleme potvrzení. Nezaplacená objednávka se po uplynutí lhůty automaticky zruší.
-          </p>
-        </>
-      )}
-
-      {isPending && order.paymentMethod === "BANK_TRANSFER" && expired && (
-        <>
-          <h1 className="mt-1 font-serif text-4xl font-bold text-cream">Lhůta k zaplacení uplynula</h1>
-          <p className="mt-4 text-cream/85">
-            Platbu jsme v určené lhůtě nepřijali, proto objednávku zrušíme. Pokud jste už zaplatili, ozvěte se nám prosím na{" "}
-            <a href={`mailto:${settings.str("contact.email")}`} className="text-gold-light underline">
-              {settings.str("contact.email")}
-            </a>{" "}
-            – platbu dohledáme.
-          </p>
+          <div id="zaplatil" className="mt-6 scroll-mt-24">
+            {claimed ? (
+              <p className="border border-ok/50 bg-ok/10 p-4 text-sm text-cream" role="status">
+                Děkujeme, že jste dali vědět o platbě
+                {order.paymentClaimedAt && <> ({formatDateTime(order.paymentClaimedAt)})</>}.
+                {verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>}
+                {cancelNotice && <> {cancelNotice}</>}
+              </p>
+            ) : (
+              <form method="post" action={`/api/objednavka/${order.publicToken}/zaplaceno`} className="max-w-sm">
+                <button className="w-full bg-gold px-6 py-3 font-bold uppercase tracking-wider text-ink transition hover:bg-gold-light">
+                  Zaplatil jsem
+                </button>
+                <p className="mt-2 text-sm text-muted">
+                  Klikněte po odeslání platby.{verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>}
+                </p>
+                {cancelNotice && <p className="mt-1 text-sm text-muted">{cancelNotice}</p>}
+              </form>
+            )}
+          </div>
         </>
       )}
 

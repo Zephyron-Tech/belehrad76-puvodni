@@ -1,7 +1,7 @@
 import type { Order, OrderItem } from "@prisma/client";
 import type { Settings } from "../settings";
 import { formatCzk, formatDateTime, formatZip } from "../format";
-import { DELIVERY_LABEL, EVENING_ENTRY_NOTE, PAYMENT_LABEL } from "../labels";
+import { DELIVERY_LABEL, EVENING_ENTRY_NOTE, PAYMENT_LABEL, transferCancelNotice } from "../labels";
 import { formatIban, type TransferInstructions } from "../bank";
 
 export type OrderWithItems = Order & { items: OrderItem[] };
@@ -83,6 +83,53 @@ function button(href: string, label: string): string {
 <a href="${esc(href)}" style="display:inline-block;padding:14px 30px;font-family:${SANS};font-size:12px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:${C.ink};text-decoration:none;">${esc(label)}</a>
 </td></tr></table>
 </td></tr>`;
+}
+
+function outlineButton(href: string, label: string): string {
+  return `<tr><td align="center" style="padding:12px 40px 0;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border:1px solid ${C.gold};">
+<a href="${esc(href)}" style="display:inline-block;padding:12px 26px;font-family:${SANS};font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${C.goldLight};text-decoration:none;">${esc(label)}</a>
+</td></tr></table>
+</td></tr>`;
+}
+
+/** Platební údaje převodem: účet, IBAN, VS, částka, QR, doba ověření a tlačítko „Zaplatil jsem“. */
+function transferBlock(
+  settings: Settings,
+  t: TransferInstructions,
+  opts: { orderUrl: string; qrCid?: string; cancelFrom: Date },
+): string {
+  const qr = opts.qrCid
+    ? `<td style="width:164px;padding-left:24px;vertical-align:top;" align="right">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px;"><img src="cid:${opts.qrCid}" width="140" height="140" alt="QR platba" style="display:block;"></td></tr></table>
+<div style="font-family:${SANS};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.muted};margin-top:8px;text-align:center;">QR platba</div>
+</td>`
+    : "";
+  const verifyTime = settings.str("payment.verify_time");
+  return `${sectionTitle("Platební údaje")}
+<tr><td style="padding:4px 40px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="vertical-align:top;">${rows(
+    [
+      ["Číslo účtu", `<strong>${esc(t.account)}</strong>`],
+      ["IBAN", esc(formatIban(t.iban))],
+      ["Variabilní symbol", `<strong>${esc(t.variableSymbol)}</strong>`],
+      ["K úhradě", formatCzk(t.amountCzk)],
+    ],
+    { strongLast: true },
+  )}</td>
+${qr}
+</tr></table>
+</td></tr>
+${para(`Po zaplacení klikněte na „Zaplatil jsem“.${verifyTime ? ` Ověření platby obvykle trvá ${esc(verifyTime)}.` : ""} Po připsání platby obdržíte potvrzení.`, { muted: true })}
+${para(esc(transferCancelNotice(settings.num("reservation.transfer_days"), opts.cancelFrom)), { muted: true })}
+${button(`${opts.orderUrl}#zaplatil`, "Zaplatil jsem")}`;
+}
+
+function transferText(settings: Settings, t: TransferInstructions, orderUrl: string, cancelFrom: Date): string {
+  const verifyTime = settings.str("payment.verify_time");
+  const cancel = transferCancelNotice(settings.num("reservation.transfer_days"), cancelFrom);
+  return `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nK úhradě: ${formatCzk(t.amountCzk)}\n\nPo zaplacení klikněte na „Zaplatil jsem“: ${orderUrl}#zaplatil\n${verifyTime ? `Ověření platby obvykle trvá ${verifyTime}.\n` : ""}${cancel ? `${cancel}\n` : ""}`;
 }
 
 function layout(settings: Settings, title: string, body: string, preheader: string): string {
@@ -196,35 +243,8 @@ export function orderReceivedMail(
   let paymentText = "";
 
   if (order.paymentMethod === "BANK_TRANSFER" && opts.transfer) {
-    const t = opts.transfer;
-    const qr = opts.qrCid
-      ? `<td style="width:164px;padding-left:24px;vertical-align:top;" align="right">
-<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px;"><img src="cid:${opts.qrCid}" width="140" height="140" alt="QR platba" style="display:block;"></td></tr></table>
-<div style="font-family:${SANS};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.muted};margin-top:8px;text-align:center;">QR platba</div>
-</td>`
-      : "";
-    payment = `${sectionTitle("Platební údaje")}
-<tr><td style="padding:4px 40px 0;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-<td style="vertical-align:top;">${rows(
-      [
-        ["Číslo účtu", `<strong>${esc(t.account)}</strong>`],
-        ["IBAN", esc(formatIban(t.iban))],
-        ["Variabilní symbol", `<strong>${esc(t.variableSymbol)}</strong>`],
-        ["Splatnost", esc(formatDateTime(order.reservedUntil))],
-        ["K úhradě", formatCzk(t.amountCzk)],
-      ],
-      { strongLast: true },
-    )}</td>
-${qr}
-</tr></table>
-</td></tr>
-${para("Nezaplacená objednávka se po splatnosti automaticky zruší. Po připsání platby obdržíte potvrzení.", { muted: true })}`;
-    paymentText = `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nSplatnost: ${formatDateTime(order.reservedUntil)}\nK úhradě: ${formatCzk(t.amountCzk)}\n`;
-  } else {
-    payment = `${para("Pokud platba kartou neproběhla, dokončíte ji na stránce objednávky.", { muted: true, center: true })}
-${button(opts.orderUrl, "Dokončit platbu")}`;
-    paymentText = `Pokud platba neproběhla, dokončete ji zde: ${opts.orderUrl}\n`;
+    payment = transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: order.createdAt });
+    paymentText = transferText(settings, opts.transfer, opts.orderUrl, order.createdAt);
   }
 
   const html = layout(
@@ -238,7 +258,7 @@ ${payment}
 ${deliveryBlock(order, settings)}
 ${notesBlock(order, settings)}
 ${order.eveningInterest ? para(`Po zaplacení budete zařazeni do losování o vstup na slavnostní večer. ${esc(EVENING_ENTRY_NOTE)}`, { muted: true }) : ""}
-${order.paymentMethod === "BANK_TRANSFER" ? button(opts.orderUrl, "Stav objednávky") : ""}`,
+`,
     `Čeká na úhradu ${formatCzk(order.totalCzk)}.`,
   );
 
@@ -363,5 +383,109 @@ ${button(opts.orderUrl, "Stav objednávky")}`,
     `Objednávka ${order.number} je na cestě.`,
   );
   const text = `ODESLÁNO\nObjednávka č. ${order.number}\n\nDopravce: ${order.carrier}\n${order.trackingNumber ? `Číslo zásilky: ${order.trackingNumber}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  return { subject: title, html, text };
+}
+
+/**
+ * Ověřovací e-mail pro ověřovatele platby převodem (SPECIFIKACE 5b): údaje pro kontrolu v internetovém bankovnictví
+ * a odkazy Zaplaceno / Nezaplaceno – vyřeším sám / Nezaplaceno – poslat upomínku (bez přihlášení).
+ */
+export function verifyPaymentMail(
+  order: OrderWithItems,
+  settings: Settings,
+  opts: {
+    transfer: TransferInstructions;
+    repeat: boolean;
+    links: { paid: string; manual: string; remind: string };
+    adminUrl: string;
+  },
+) {
+  const t = opts.transfer;
+  const title = opts.repeat
+    ? `Stále neověřeno: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`
+    : `Ověřte platbu: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`;
+  const billing = [order.companyName, order.ico && `IČO ${order.ico}`, order.dic && `DIČ ${order.dic}`].filter(Boolean).join(", ");
+
+  const lookup: [string, string][] = [
+    ["Variabilní symbol", `<span style="font-family:${SERIF};font-size:22px;color:${C.goldLight};">${esc(t.variableSymbol)}</span>`],
+    ["Částka", `<span style="font-family:${SERIF};font-size:22px;color:${C.goldLight};">${formatCzk(t.amountCzk)}</span>`],
+    ["Na účet", esc(t.account)],
+    ["IBAN", esc(formatIban(t.iban))],
+    ["Objednáno", esc(formatDateTime(order.createdAt))],
+    ["Zákazník hlásí „Zaplatil jsem“", order.paymentClaimedAt ? esc(formatDateTime(order.paymentClaimedAt)) : "zatím ne"],
+  ];
+  if (order.reminderCount > 0) lookup.push(["Upomínky", `${order.reminderCount}× (poslední ${esc(formatDateTime(order.reminderSentAt))})`]);
+
+  const customer: [string, string][] = [
+    ["Jméno", esc(`${order.firstName} ${order.lastName}`)],
+    ["E-mail", esc(order.email)],
+    ["Telefon", esc(order.phone)],
+  ];
+  if (billing) customer.push(["Fakturační údaje", esc(billing)]);
+
+  const html = layout(
+    settings,
+    title,
+    `${statusBlock("pending", "Ověřte platbu", opts.repeat ? "Opakované upozornění · zatím nerozhodnuto" : `Převodem · objednávka č. ${order.number}`)}
+${para("V internetovém bankovnictví vyhledejte příchozí platbu s tímto variabilním symbolem a částkou.", { muted: true, center: true })}
+<tr><td style="padding:24px 40px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel2}" style="background:${C.panel2};border:1px solid ${C.line};border-top:2px solid ${C.gold};"><tr><td style="padding:18px 24px 14px;">
+${rows(lookup)}
+</td></tr></table>
+</td></tr>
+${button(opts.links.paid, "Zaplaceno")}
+${outlineButton(opts.links.remind, "Nezaplaceno – poslat upomínku")}
+${outlineButton(opts.links.manual, "Nezaplaceno – vyřeším sám")}
+${para("Odkaz otevře stránku se shrnutím, potvrzuje se tlačítkem. Funguje bez přihlášení – e-mail nepřeposílejte. Úplné zrušení objednávky (uvolnění boxu) jen v administraci.", { muted: true, center: true })}
+${sectionTitle("Zákazník")}
+<tr><td style="padding:4px 40px 0;">${rows(customer)}</td></tr>
+${sectionTitle("Objednávka")}
+${itemsTable(order)}
+${deliveryBlock(order, settings)}
+${outlineButton(opts.adminUrl, "Otevřít v administraci")}`,
+    `VS ${t.variableSymbol}, ${formatCzk(t.amountCzk)}, ${order.firstName} ${order.lastName}`,
+  );
+
+  const text = `${opts.repeat ? "STÁLE NEOVĚŘENO" : "OVĚŘTE PLATBU"} – objednávka ${order.number}
+
+V internetovém bankovnictví vyhledejte příchozí platbu:
+Variabilní symbol: ${t.variableSymbol}
+Částka: ${formatCzk(t.amountCzk)}
+Na účet: ${t.account} (IBAN ${t.iban})
+Objednáno: ${formatDateTime(order.createdAt)}
+Zákazník hlásí „Zaplatil jsem“: ${order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : "zatím ne"}
+${order.reminderCount > 0 ? `Upomínky: ${order.reminderCount}×\n` : ""}
+Zaplaceno: ${opts.links.paid}
+Nezaplaceno – poslat upomínku: ${opts.links.remind}
+Nezaplaceno – vyřeším sám: ${opts.links.manual}
+
+${order.firstName} ${order.lastName}, ${order.email}, ${order.phone}${billing ? `\n${billing}` : ""}
+
+${itemsText(order)}
+
+Administrace: ${opts.adminUrl}
+`;
+  return { subject: title, html, text };
+}
+
+/** Upomínka zákazníkovi: platba převodem zatím nedorazila. Bez splatnosti, s QR a „Zaplatil jsem“. */
+export function paymentReminderMail(
+  order: OrderWithItems,
+  settings: Settings,
+  opts: { orderUrl: string; transfer: TransferInstructions; qrCid?: string },
+) {
+  const title = `Připomínka platby – objednávka ${order.number}`;
+  const html = layout(
+    settings,
+    title,
+    `${statusBlock("pending", "Čekáme na platbu", `Objednávka č. ${order.number}`)}
+${para("Platbu za objednávku jsme zatím neobdrželi. Pokud jste ji už odeslali, děkujeme – tento e-mail můžete přejít.", { muted: true, center: true })}
+${transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: new Date() })}
+${sectionTitle("Objednávka")}
+${itemsTable(order)}
+${deliveryBlock(order, settings)}`,
+    `Čekáme na platbu ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
+  );
+  const text = `ČEKÁME NA PLATBU\nObjednávka č. ${order.number}\n\nPlatbu za objednávku jsme zatím neobdrželi. Pokud jste ji už odeslali, děkujeme – tento e-mail můžete přejít.\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
   return { subject: title, html, text };
 }

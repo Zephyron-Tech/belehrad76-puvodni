@@ -32,9 +32,12 @@ describe("objednávky a sklad", () => {
     expect(order.stockReserved).toBe(true);
     expect(await boxStock()).toBe(143);
 
-    expect(sentMailLog).toHaveLength(1);
-    expect(sentMailLog[0].subject).toContain(order.number);
-    expect(sentMailLog[0].attachments).toContain("qr-platba.png");
+    // zákazníkovi „objednávka přijata“ s QR, ověřovateli ověřovací e-mail (SPECIFIKACE 5b)
+    const customerMails = sentMailLog.filter((m) => m.to === "jan@example.com");
+    expect(customerMails).toHaveLength(1);
+    expect(customerMails[0].subject).toContain(order.number);
+    expect(customerMails[0].attachments).toContain("qr-platba.png");
+    expect(sentMailLog.filter((m) => m.subject.includes("Ověřte platbu"))).toHaveLength(1);
   });
 
   it("jen kusovky: sklad boxů se nemění, doprava Zásilkovnou, osobní převzetí zdarma", async () => {
@@ -173,18 +176,19 @@ describe("objednávky a sklad", () => {
     expect(await boxStock()).toBe(144);
   });
 
-  it("po vypršení rezervace se nezaplacená objednávka zruší a box se uvolní", async () => {
-    const order = await createOrder(checkout(), null);
+  it("po vypršení rezervace se nezaplacená objednávka (GoPay) zruší a box se uvolní", async () => {
+    const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
     expect(await boxStock()).toBe(143);
-    const cancelled = await expireStaleOrders(new Date(Date.now() + 8 * 24 * 3_600_000));
+    const cancelled = await expireStaleOrders(new Date(Date.now() + 60 * 60_000));
     expect(cancelled).toBe(1);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("CANCELLED");
     expect(await boxStock()).toBe(144);
   });
 
   it("pozdě došlý převod: zrušenou objednávku lze označit jako zaplacenou, box se znovu odečte", async () => {
+    // převody se automaticky neruší (SPECIFIKACE 5b) – zruší je admin
     const order = await createOrder(checkout(), null);
-    await expireStaleOrders(new Date(Date.now() + 8 * 24 * 3_600_000));
+    await cancelOrder(order.id, admin);
     expect(await boxStock()).toBe(144);
     await markPaid(order.id, admin);
     expect(await boxStock()).toBe(143);
@@ -193,7 +197,7 @@ describe("objednávky a sklad", () => {
   it("pozdě došlý převod bez boxu skladem: admin dostane chybu, stav se nezmění", async () => {
     await resetDb(1);
     const late = await createOrder(checkout(), null);
-    await expireStaleOrders(new Date(Date.now() + 8 * 24 * 3_600_000));
+    await cancelOrder(late.id, admin);
     await createOrder(checkout({ customer: { firstName: "B", lastName: "C", email: "b@example.com", phone: "777123456" } }), null);
     await expect(markPaid(late.id, admin)).rejects.toBeInstanceOf(TransitionError);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: late.id } })).status).toBe("CANCELLED");

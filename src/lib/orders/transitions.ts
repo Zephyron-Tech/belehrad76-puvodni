@@ -63,7 +63,16 @@ export async function markPaid(orderId: number, ctx: ActionContext): Promise<Mar
 
       await tx.order.update({
         where: { id: order.id },
-        data: { status: "PAID", paidAt: new Date(), stockReserved, reservedUntil: null, cancelledAt: null },
+        data: {
+          status: "PAID",
+          paidAt: new Date(),
+          stockReserved,
+          reservedUntil: null,
+          cancelledAt: null,
+          stateChangedAt: new Date(),
+          // zaplaceno → ověřování platby převodem končí
+          verifyState: null,
+        },
       });
       await audit(
         {
@@ -122,7 +131,7 @@ export async function markShipped(
 
     await tx.order.update({
       where: { id: order.id },
-      data: { status: "SHIPPED", shippedAt: new Date(), carrier, trackingNumber },
+      data: { status: "SHIPPED", shippedAt: new Date(), carrier, trackingNumber, stateChangedAt: new Date() },
     });
     await audit({ action: "status_change", orderId: order.id, fromStatus: order.status, toStatus: "SHIPPED" }, ctx, tx);
     return true;
@@ -140,7 +149,10 @@ export async function markCompleted(orderId: number, ctx: ActionContext) {
     if (order.status !== "SHIPPED" && order.status !== "PAID") {
       throw new TransitionError("Dokončit lze jen zaplacenou nebo odeslanou objednávku.");
     }
-    await tx.order.update({ where: { id: order.id }, data: { status: "COMPLETED", completedAt: new Date() } });
+    await tx.order.update({
+      where: { id: order.id },
+      data: { status: "COMPLETED", completedAt: new Date(), stateChangedAt: new Date() },
+    });
     await audit({ action: "status_change", orderId: order.id, fromStatus: order.status, toStatus: "COMPLETED" }, ctx, tx);
   });
 }
@@ -159,7 +171,14 @@ export async function cancelOrder(orderId: number, ctx: ActionContext, reason?: 
     if (order.stockReserved) await releaseStock(tx, stockItems(order));
     await tx.order.update({
       where: { id: order.id },
-      data: { status: "CANCELLED", cancelledAt: new Date(), stockReserved: false, reservedUntil: null },
+      data: {
+        status: "CANCELLED",
+        cancelledAt: new Date(),
+        stockReserved: false,
+        reservedUntil: null,
+        stateChangedAt: new Date(),
+        verifyState: null,
+      },
     });
     await audit(
       { action: "status_change", orderId: order.id, fromStatus: order.status, toStatus: "CANCELLED", detail: reason ?? null },

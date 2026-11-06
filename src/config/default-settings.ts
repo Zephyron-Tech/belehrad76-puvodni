@@ -81,13 +81,19 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
   {
     key: "reservation.transfer_days",
     value: "7",
-    description: "Jak dlouho se drží box při platbě převodem (dny). Pak se nezaplacená objednávka zruší.",
+    description: "Platba převodem: za kolik dní od objednávky / upomínky zákazníkovi píšeme, že objednávku zrušíme (jen informace, automaticky se neruší).",
   },
   {
     key: "payment.bank_transfer",
-    value: "false",
+    value: "true",
     description: "Platba bankovním převodem / QR kódem (true/false). Vypnuto = platí se jen přes platební bránu GoPay.",
   },
+  {
+    key: "payment.verify_email",
+    value: "rychlikjan52@gmail.com",
+    description: "Kdo ověřuje platby převodem v internetovém bankovnictví (ověřovací e-mail s odkazy Zaplaceno / Nezaplaceno)",
+  },
+  { key: "payment.verify_time", value: "5–9 hodin", description: "Jak dlouho obvykle trvá ověření platby převodem (text pro zákazníka)" },
   { key: "bank.account", value: "303642799/0300", description: "Číslo účtu pro platbu převodem (formát číslo/kód banky)" },
 
   // Texty úvodní stránky

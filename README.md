@@ -4,7 +4,7 @@ Web a e-shop limitované edice slivovice k 50. výročí vítězství na ME 1976
 
 - **Prodej:** 1 box (13 lahví, sklad 144 = 152 − 8 do dražby) + 13 kusovek (neomezeně, vyrábí se na objednávku)
 - **Doprava:** objednávka s boxem kurýrem 490 Kč jednou (i více boxů a kusovky), jen kusovky Zásilkovnou na výdejní místo (bez Z-BOXů – neumí ověření věku 18+) podle hmotnosti (dráž než 490 Kč → kurýr na adresu za 490 Kč), osobní převzetí na FAČR zdarma
-- **Platby:** jen platební brána GoPay (karta, rychlý převod, Apple/Google Pay). Ruční převod s QR kódem na účet 303642799/0300 je **vypnutý** (`payment.bank_transfer` = `false`), kód zůstává – zapne se přepnutím na `true`
+- **Platby:** GoPay (karta, rychlý převod, Apple/Google Pay) + převod s QR kódem na účet 303642799/0300 s **ověřováním platby e-mailem** (viz níže, SPECIFIKACE 5b)
 - **Po zaplacení:** e-mail s PDF potvrzením o zaplacení (ne faktura), upozornění provozovateli
 - **Administrace:** jen objednávky, za přihlášením s 2FA, jeden společný účet, audit log, exporty CSV
 - **Konfigurace** (ceny, sklad, doprava, texty, hráči, kontakty): přímo v databázi, bez administrace
@@ -68,9 +68,11 @@ Nejdůležitější klíče v `Setting` (úplný seznam s popisy: [`src/config/d
 | `pickup.enabled`, `pickup.address`, `pickup.note` | | Osobní převzetí na FAČR |
 | `bottle.lead_time` | | Text o dodací lhůtě kusovek (8 dní) |
 | `box.delivery` | | Text o doručení boxu (kurýr, 8 dní) |
-| `reservation.gopay_minutes` / `reservation.transfer_days` | 30 / 7 | Jak dlouho se drží box před zaplacením |
+| `reservation.gopay_minutes` | 30 | Jak dlouho se drží box při platbě přes GoPay (převody se automaticky neruší) |
 | `order.max_boxes` / `order.max_bottles` | 10 / 50 | Limit na objednávku |
-| `payment.bank_transfer` | `false` | Platba převodem / QR kódem v pokladně (vypnuto – jen GoPay) |
+| `payment.bank_transfer` | `true` | Platba převodem / QR kódem v pokladně (`false` = jen GoPay) |
+| `payment.verify_email` | rychlikjan52@gmail.com | Ověřovatel plateb převodem (ověřovací e-mail s odkazy) |
+| `payment.verify_time` | 5–9 hodin | Doba ověření platby (text pro zákazníka) |
 | `bank.account` | 303642799/0300 | Účet pro platbu převodem a QR |
 | `contact.email`, `contact.phone`, `owner.notify_email` | | **Doplnit skutečné adresy** |
 | `social.facebook_url`, `social.instagram_url`, `foundation.url` | prázdné | Odkazy (prázdné = skryté) |
@@ -108,7 +110,21 @@ Po 5 chybných pokusech se účet na 15 minut zablokuje, po 30 minutách nečinn
 Stavy: **Přijatá (čeká na platbu) → Zaplacená → Odeslaná / Připravená k převzetí → Dokončená**, případně **Zrušená**.
 
 - GoPay platby se označí jako zaplacené automaticky (notifikace + ověření v API).
-- Převod: po připsání peněz (zkontrolovat VS = číslo objednávky a částku) tlačítko **Platba přijata**.
+- Převod: ověřuje se e-mailem (níže), v administraci navíc stav ověření, ruční akce a **Platba přijata**.
+- U každé objednávky (i v seznamu) je vidět, **jak dlouho je v posledním stavu**.
+
+### Platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)
+
+1. Zákazník po objednávce převodem vidí platební údaje a QR kód (stránka objednávky i e-mail) a tlačítko
+   **Zaplatil jsem** – to je jen ujištění pro zákazníka („Ověření platby obvykle trvá 5–9 hodin“), zaznamená se čas.
+2. Hned po objednávce odejde **ověřovací e-mail** na `payment.verify_email`: VS, částka, účet, zákazník, položky
+   a odkazy **Zaplaceno / Nezaplaceno – poslat upomínku / Nezaplaceno – vyřeším sám**. Odkazy fungují bez přihlášení
+   (tajný token), otevřou stránku `/overeni-platby/…` se shrnutím – rozhoduje až tlačítko (skenery pošty odkazy otevírají samy).
+3. Bez rozhodnutí přijde ověřovací e-mail znovu každých 24 h (cron + líné spuštění při běžných požadavcích).
+4. **Zaplaceno** = objednávka zaplacená (potvrzení s PDF zákazníkovi). **Upomínka** = e-mail zákazníkovi s QR,
+   ověřování běží dál. **Vyřeším sám** = připomínání skončí, objednávka čeká a řeší ji admin.
+5. Objednávky převodem se **automaticky neruší**; zrušení (uvolnění boxu) jen admin v administraci. Zákazník přesto
+   všude vidí „Pokud platbu neobdržíme do 7 dní (do …), objednávku zrušíme.“ – jen informace (`reservation.transfer_days`).
   Pozdě došlou platbu lze označit i u zrušené objednávky (box se znovu odečte, pokud je skladem).
 - **Odesláno:** zadat dopravce a číslo zásilky → zákazníkovi odejde e-mail. U osobního převzetí e-mail „připraveno k převzetí“.
 - **Zrušit:** box se vrátí na sklad; u zaplacené objednávky je nutné vrátit peníze ručně.

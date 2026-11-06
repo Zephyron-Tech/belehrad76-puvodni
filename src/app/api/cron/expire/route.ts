@@ -2,9 +2,11 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { expireStaleOrders, retryPaidNotifications } from "@/lib/orders/expire";
+import { resendPendingVerifications } from "@/lib/orders/transfer-verify";
 
 /**
- * Zrušení nezaplacených objednávek po vypršení rezervace a dorovnání neodeslaných e-mailů po zaplacení.
+ * Zrušení nezaplacených objednávek (GoPay) po vypršení rezervace, dorovnání neodeslaných e-mailů po zaplacení
+ * a opakování ověřovacích e-mailů plateb převodem (každých 24 h).
  * Volat pravidelně (např. každých 5 minut) s hlavičkou: Authorization: Bearer <CRON_SECRET>
  */
 async function handle(req: Request) {
@@ -18,7 +20,8 @@ async function handle(req: Request) {
 
   const cancelled = await expireStaleOrders();
   const notified = await retryPaidNotifications();
-  return NextResponse.json({ cancelled, notified });
+  const verifyMails = await resendPendingVerifications();
+  return NextResponse.json({ cancelled, notified, verifyMails });
 }
 
 export const GET = handle;
