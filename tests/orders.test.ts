@@ -64,6 +64,12 @@ describe("objednávky a sklad", () => {
     ).rejects.toMatchObject({ fieldErrors: { packetaPoint: "Vyberte výdejní místo Zásilkovny." } });
   });
 
+  it("vypnutý převod: objednávku převodem nelze vytvořit, bránou ano", async () => {
+    await setSetting("payment.bank_transfer", "false");
+    await expect(createOrder(checkout({ paymentMethod: "BANK_TRANSFER" }), null)).rejects.toThrow("Platba převodem není k dispozici");
+    await expect(createOrder(checkout({ paymentMethod: "GOPAY" }), null)).resolves.toBeTruthy();
+  });
+
   it("losování o vstup na večer jen u objednávky s boxem", async () => {
     const bottles = await createOrder(bottlesCheckout([{ slug: "viktor", quantity: 2 }], { eveningInterest: true }), null);
     expect(bottles.eveningInterest).toBe(false);

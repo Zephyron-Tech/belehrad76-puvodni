@@ -155,6 +155,9 @@ export async function createOrder(raw: unknown, ip: string | null) {
   if (!settings.bool("sales.open")) throw new CheckoutError("Prodej momentálně není spuštěn.");
   if (cart.issues.length > 0) throw new CheckoutError(cart.issues.map((i) => i.message).join(" "));
   if (cart.lines.length === 0) throw new CheckoutError("Košík je prázdný.");
+  if (input.paymentMethod === "BANK_TRANSFER" && !settings.bool("payment.bank_transfer")) {
+    throw new CheckoutError("Platba převodem není k dispozici. Zvolte prosím platbu přes platební bránu.");
+  }
   if (input.deliveryMethod === "PICKUP" && !settings.bool("pickup.enabled")) {
     throw new CheckoutError("Osobní převzetí momentálně není k dispozici.");
   }

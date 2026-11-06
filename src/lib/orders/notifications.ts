@@ -45,13 +45,15 @@ export async function sendOrderReceived(orderId: number) {
   const attachments = [];
   if (order.paymentMethod === "BANK_TRANSFER") {
     transfer = transferInstructions(settings.str("bank.account"), order.totalCzk, order.number, settings.str("seller.name"));
-    attachments.push({ filename: "qr-platba.png", content: await qrPng(transfer.spd), cid: "qr-platba" });
+    if (settings.bool("payment.bank_transfer")) {
+      attachments.push({ filename: "qr-platba.png", content: await qrPng(transfer.spd), cid: "qr-platba" });
+    }
   }
 
   const mail = orderReceivedMail(order, settings, {
     orderUrl: orderLink(order.publicToken),
     transfer,
-    qrCid: transfer ? "qr-platba" : undefined,
+    qrCid: attachments.length > 0 ? "qr-platba" : undefined,
   });
   await sendMail({ to: order.email, ...mail, attachments, replyTo: customerReplyTo(settings) });
 }

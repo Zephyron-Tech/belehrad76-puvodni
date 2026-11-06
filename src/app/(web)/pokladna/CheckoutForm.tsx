@@ -18,6 +18,8 @@ type Props = {
   transferDays: number;
   gopayMinutes: number;
   boxShippingCzk: number;
+  /** Platba převodem / QR kódem (nastavení payment.bank_transfer) – teď vypnutá, platí se jen bránou */
+  bankTransferEnabled: boolean;
   packetaApiKey?: string;
   packetaMock: boolean;
   turnstileSiteKey?: string;
@@ -35,7 +37,8 @@ export function CheckoutForm(props: Props) {
 
   const [delivery, setDelivery] = useState<Delivery>("PACKETA");
   const [packetaPoint, setPacketaPoint] = useState<PacketaPoint | null>(null);
-  const [payment, setPayment] = useState<Payment>("GOPAY");
+  const [paymentChoice, setPayment] = useState<Payment>("GOPAY");
+  const payment: Payment = props.bankTransferEnabled ? paymentChoice : "GOPAY";
   const [company, setCompany] = useState(false);
   const [evening, setEvening] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -300,15 +303,17 @@ export function CheckoutForm(props: Props) {
                 </span>
               </span>
             </label>
-            <label className={`flex cursor-pointer items-start gap-3 border p-4 ${payment === "BANK_TRANSFER" ? "border-gold bg-panel" : "border-line"}`}>
-              <input type="radio" name="payment" checked={payment === "BANK_TRANSFER"} onChange={() => setPayment("BANK_TRANSFER")} className="mt-1 accent-[var(--gold)]" />
-              <span>
-                <span className="block font-semibold">Bankovním převodem / QR kódem</span>
-                <span className="block text-sm text-muted">
-                  Platební údaje a QR kód dostanete po odeslání objednávky. Zboží držíme {props.transferDays} dní.
+            {props.bankTransferEnabled && (
+              <label className={`flex cursor-pointer items-start gap-3 border p-4 ${payment === "BANK_TRANSFER" ? "border-gold bg-panel" : "border-line"}`}>
+                <input type="radio" name="payment" checked={payment === "BANK_TRANSFER"} onChange={() => setPayment("BANK_TRANSFER")} className="mt-1 accent-[var(--gold)]" />
+                <span>
+                  <span className="block font-semibold">Bankovním převodem / QR kódem</span>
+                  <span className="block text-sm text-muted">
+                    Platební údaje a QR kód dostanete po odeslání objednávky. Zboží držíme {props.transferDays} dní.
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+            )}
           </div>
         </fieldset>
 

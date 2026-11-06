@@ -15,29 +15,103 @@ export function esc(value: string | null | undefined): string {
     .replace(/'/g, "&#39;");
 }
 
-const GOLD = "#a8823c";
-const INK = "#1b1712";
+/*
+ * Vzhled e-mailů podle e-shopu: tmavé pozadí, zlatá, krémová, patkové písmo v nadpisech.
+ * Barvy jsou i v atributech bgcolor – kvůli Outlooku a tmavému režimu poštovních klientů.
+ */
+const C = {
+  ink: "#0f0d0b",
+  panel: "#19150f",
+  panel2: "#221c15",
+  line: "#3a3026",
+  gold: "#c9a35c",
+  goldLight: "#e6c98f",
+  cream: "#f3ead9",
+  muted: "#a89c86",
+  seal: "#b3262d",
+};
+const SERIF = "Georgia,'Times New Roman',Times,serif";
+const SANS = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 
-function layout(settings: Settings, title: string, body: string): string {
+/** Malý nadpis sekce: verzálky s prostrkáním a linkou. */
+function sectionTitle(label: string): string {
+  return `<tr><td style="padding:28px 40px 10px;">
+<div style="font-family:${SANS};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${C.gold};">${esc(label)}</div>
+<div style="height:1px;line-height:1px;font-size:1px;background:${C.line};margin-top:10px;">&nbsp;</div>
+</td></tr>`;
+}
+
+/** Řádky „popisek – hodnota“ (hodnoty už escapované). */
+function rows(items: [string, string][], opts: { strongLast?: boolean } = {}): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${SANS};font-size:14px;">
+${items
+  .map(([label, value], i) => {
+    const last = opts.strongLast && i === items.length - 1;
+    return `<tr>
+<td style="padding:7px 12px 7px 0;color:${C.muted};vertical-align:top;">${esc(label)}</td>
+<td style="padding:7px 0;color:${last ? C.goldLight : C.cream};text-align:right;vertical-align:top;${last ? `font-family:${SERIF};font-size:20px;` : ""}">${value}</td>
+</tr>`;
+  })
+  .join("")}
+</table>`;
+}
+
+/**
+ * Status nahoře. Objednávka: obrysová pečeť a „čeká na úhradu“. Platba: plná zlatá pečeť s fajfkou.
+ * Rozdíl mezi přijatou objednávkou a přijatou platbou je tak vidět na první pohled.
+ */
+function statusBlock(kind: "pending" | "paid" | "neutral", label: string, sub: string): string {
+  const seal =
+    kind === "paid"
+      ? `<td align="center" bgcolor="${C.gold}" style="background:${C.gold};width:64px;height:64px;border-radius:32px;font-family:${SERIF};font-size:30px;line-height:64px;color:${C.ink};">&#10003;</td>`
+      : `<td align="center" style="width:62px;height:62px;border:1px solid ${kind === "pending" ? C.gold : C.line};border-radius:32px;font-family:${SERIF};font-size:13px;letter-spacing:1px;line-height:62px;color:${C.gold};">1976</td>`;
+  return `<tr><td align="center" style="padding:34px 40px 6px;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>${seal}</tr></table>
+<div style="font-family:${SERIF};font-size:30px;line-height:1.2;color:${kind === "paid" ? C.goldLight : C.cream};margin-top:18px;">${esc(label)}</div>
+<div style="font-family:${SANS};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${kind === "pending" ? C.gold : C.muted};margin-top:8px;">${esc(sub)}</div>
+</td></tr>`;
+}
+
+/** Odstavec textu (html už escapované). */
+function para(html: string, opts: { muted?: boolean; center?: boolean } = {}): string {
+  return `<tr><td style="padding:12px 40px 0;font-family:${SANS};font-size:14px;line-height:1.7;color:${opts.muted ? C.muted : C.cream};${opts.center ? "text-align:center;" : ""}">${html}</td></tr>`;
+}
+
+function button(href: string, label: string): string {
+  return `<tr><td align="center" style="padding:28px 40px 4px;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${C.gold}" style="background:${C.gold};">
+<a href="${esc(href)}" style="display:inline-block;padding:14px 30px;font-family:${SANS};font-size:12px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:${C.ink};text-decoration:none;">${esc(label)}</a>
+</td></tr></table>
+</td></tr>`;
+}
+
+function layout(settings: Settings, title: string, body: string, preheader: string): string {
+  const phone = settings.str("contact.phone");
+  const email = settings.str("contact.email");
   return `<!doctype html>
-<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
 <title>${esc(title)}</title></head>
-<body style="margin:0;background:#f4efe6;font-family:Arial,Helvetica,sans-serif;color:${INK};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4efe6;padding:24px 0;">
-<tr><td align="center">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;">
-<tr><td style="background:${INK};padding:24px 28px;text-align:center;">
-<div style="font-family:Georgia,serif;font-size:26px;letter-spacing:2px;color:#d9b46a;font-weight:bold;">MISTŘI EVROPY</div>
-<div style="font-family:Georgia,serif;font-size:14px;letter-spacing:4px;color:#f4ecdc;margin-top:4px;">BĚLEHRAD 1976</div>
+<body style="margin:0;padding:0;background:${C.ink};" bgcolor="${C.ink}">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${C.ink};">${esc(preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.ink}" style="background:${C.ink};">
+<tr><td align="center" style="padding:32px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="${C.panel}" style="width:100%;max-width:600px;background:${C.panel};border:1px solid ${C.line};">
+<tr><td align="center" style="padding:40px 40px 30px;border-bottom:1px solid ${C.line};">
+<div style="font-family:${SANS};font-size:10px;letter-spacing:4px;text-transform:uppercase;color:${C.muted};">Limitovaná edice</div>
+<div style="font-family:${SERIF};font-size:30px;letter-spacing:6px;color:${C.gold};margin-top:12px;">MISTŘI EVROPY</div>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr>
+<td style="width:42px;vertical-align:middle;"><div style="height:1px;line-height:1px;font-size:1px;background:${C.gold};">&nbsp;</div></td>
+<td style="padding:0 12px;font-family:${SERIF};font-size:13px;letter-spacing:5px;color:${C.cream};white-space:nowrap;">BĚLEHRAD 1976</td>
+<td style="width:42px;vertical-align:middle;"><div style="height:1px;line-height:1px;font-size:1px;background:${C.gold};">&nbsp;</div></td>
+</tr></table>
 </td></tr>
-<tr><td style="padding:28px;font-size:15px;line-height:1.55;">
-<h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 16px;color:${INK};">${esc(title)}</h1>
 ${body}
-</td></tr>
-<tr><td style="padding:20px 28px;background:#faf6ee;font-size:12px;color:#6b6252;line-height:1.5;">
+<tr><td style="padding:40px 40px 0;"><div style="height:1px;line-height:1px;font-size:1px;background:${C.line};">&nbsp;</div></td></tr>
+<tr><td align="center" style="padding:24px 40px 36px;font-family:${SANS};font-size:11px;line-height:1.8;color:${C.muted};">
 Výtěžek edice jde na podporu Nadace fotbalových internacionálů.<br>
-Prodávající: ${esc(settings.str("seller.name"))}, IČO ${esc(settings.str("seller.ico"))}, ${esc(settings.str("seller.address"))}<br>
-Kontakt: ${esc(settings.str("contact.email"))}${settings.str("contact.phone") ? `, ${esc(settings.str("contact.phone"))}` : ""}<br>
+${esc(settings.str("seller.name"))} · IČO ${esc(settings.str("seller.ico"))} · ${esc(settings.str("seller.address"))}<br>
+${email ? `<a href="mailto:${esc(email)}" style="color:${C.gold};text-decoration:none;">${esc(email)}</a>` : ""}${phone ? ` · ${esc(phone)}` : ""}<br>
 Prodej alkoholu osobám mladším 18 let je zakázán.
 </td></tr>
 </table>
@@ -46,55 +120,72 @@ Prodej alkoholu osobám mladším 18 let je zakázán.
 }
 
 function itemsTable(order: OrderWithItems): string {
-  const rows = order.items
+  const cell = `border-bottom:1px solid ${C.line};vertical-align:top;`;
+  const items = order.items
     .map(
       (i) => `<tr>
-<td style="padding:6px 0;border-bottom:1px solid #eee;">${esc(i.name)}${i.madeToOrder ? '<br><span style="font-size:12px;color:#6b6252;">vyrábí se na objednávku</span>' : ""}</td>
-<td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}×</td>
-<td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">${formatCzk(i.unitPriceCzk * i.quantity)}</td>
+<td style="padding:12px 12px 12px 0;${cell}">
+<div style="font-family:${SERIF};font-size:16px;color:${C.cream};">${esc(i.name)}</div>
+<div style="font-family:${SANS};font-size:12px;color:${C.muted};margin-top:3px;">${i.quantity} × ${formatCzk(i.unitPriceCzk)}${i.madeToOrder ? " · vyrábí se na objednávku" : ""}</div>
+</td>
+<td style="padding:12px 0;${cell}text-align:right;white-space:nowrap;font-family:${SANS};font-size:14px;color:${C.cream};">${formatCzk(i.unitPriceCzk * i.quantity)}</td>
 </tr>`,
     )
     .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin:12px 0;">
-${rows}
-<tr><td style="padding:6px 0;">Doprava – ${esc(DELIVERY_LABEL[order.deliveryMethod])}</td><td></td>
-<td style="padding:6px 0;text-align:right;white-space:nowrap;">${order.shippingCzk ? formatCzk(order.shippingCzk) : "zdarma"}</td></tr>
-<tr><td style="padding:8px 0;font-weight:bold;border-top:2px solid ${INK};">Celkem</td><td style="border-top:2px solid ${INK};"></td>
-<td style="padding:8px 0;font-weight:bold;text-align:right;border-top:2px solid ${INK};white-space:nowrap;">${formatCzk(order.totalCzk)}</td></tr>
-</table>`;
+  return `<tr><td style="padding:0 40px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${items}
+<tr>
+<td style="padding:12px 12px 12px 0;${cell}font-family:${SANS};font-size:14px;color:${C.muted};">Doprava – ${esc(DELIVERY_LABEL[order.deliveryMethod])}</td>
+<td style="padding:12px 0;${cell}text-align:right;white-space:nowrap;font-family:${SANS};font-size:14px;color:${C.cream};">${order.shippingCzk ? formatCzk(order.shippingCzk) : "zdarma"}</td>
+</tr>
+<tr>
+<td style="padding:16px 0 0;font-family:${SANS};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${C.muted};">Celkem vč. DPH</td>
+<td style="padding:16px 0 0;text-align:right;white-space:nowrap;font-family:${SERIF};font-size:24px;color:${C.goldLight};">${formatCzk(order.totalCzk)}</td>
+</tr>
+</table>
+</td></tr>`;
 }
 
 function itemsText(order: OrderWithItems): string {
   return [
-    ...order.items.map((i) => `- ${i.name}: ${i.quantity}× = ${formatCzk(i.unitPriceCzk * i.quantity)}`),
-    `- Doprava (${DELIVERY_LABEL[order.deliveryMethod]}): ${order.shippingCzk ? formatCzk(order.shippingCzk) : "zdarma"}`,
-    `Celkem: ${formatCzk(order.totalCzk)}`,
+    ...order.items.map((i) => `${i.name}  ${i.quantity} × ${formatCzk(i.unitPriceCzk)} = ${formatCzk(i.unitPriceCzk * i.quantity)}`),
+    `Doprava – ${DELIVERY_LABEL[order.deliveryMethod]}: ${order.shippingCzk ? formatCzk(order.shippingCzk) : "zdarma"}`,
+    `Celkem vč. DPH: ${formatCzk(order.totalCzk)}`,
   ].join("\n");
 }
 
-function deliveryHtml(order: OrderWithItems, settings: Settings): string {
+function deliveryBlock(order: OrderWithItems, settings: Settings): string {
+  let label: string;
+  let lines: string[];
   if (order.deliveryMethod === "PICKUP") {
-    return `<p><strong>Osobní převzetí:</strong> ${esc(settings.str("pickup.address"))}<br>${esc(settings.str("pickup.note"))}</p>`;
+    label = "Osobní převzetí";
+    lines = [settings.str("pickup.address"), settings.str("pickup.note")];
+  } else if (order.deliveryMethod === "PACKETA") {
+    label = "Zásilkovna – výdejní místo";
+    lines = [order.packetaPointName ?? "", order.packetaPointAddress ?? ""];
+  } else {
+    label = "Doručovací adresa";
+    lines = [`${order.firstName} ${order.lastName}`, order.street ?? "", `${formatZip(order.zip)} ${order.city ?? ""}`.trim()];
   }
-  if (order.deliveryMethod === "PACKETA") {
-    return `<p><strong>Výdejní místo Zásilkovny:</strong><br>${esc(order.packetaPointName)}${order.packetaPointAddress ? `<br>${esc(order.packetaPointAddress)}` : ""}</p>`;
-  }
-  return `<p><strong>Doručovací adresa:</strong><br>${esc(order.firstName)} ${esc(order.lastName)}<br>${esc(order.street)}<br>${esc(formatZip(order.zip))} ${esc(order.city)}</p>`;
-}
-
-function button(href: string, label: string): string {
-  return `<p style="margin:20px 0;"><a href="${esc(href)}" style="display:inline-block;background:${GOLD};color:#ffffff;text-decoration:none;padding:12px 22px;font-weight:bold;">${esc(label)}</a></p>`;
+  return `${sectionTitle(label)}
+<tr><td style="padding:4px 40px 0;font-family:${SANS};font-size:14px;line-height:1.7;color:${C.cream};">${lines.filter(Boolean).map(esc).join("<br>")}</td></tr>`;
 }
 
 /** Doručení a dodací lhůta: box kurýrem (jen při doručení na adresu), kusovky na objednávku */
-function madeToOrderNote(order: OrderWithItems, settings: Settings): string {
+function notesBlock(order: OrderWithItems, settings: Settings): string {
   const notes: string[] = [];
   if (order.deliveryMethod === "SHIPPING" && order.items.some((i) => i.type === "BOX")) notes.push(settings.str("box.delivery"));
   if (order.items.some((i) => i.madeToOrder)) notes.push(settings.str("bottle.lead_time"));
-  return notes.map((n) => `<p style="font-size:14px;color:#6b6252;">${esc(n)}</p>`).join("\n");
+  if (notes.filter(Boolean).length === 0) return "";
+  return `<tr><td style="padding:22px 40px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="border-left:2px solid ${C.gold};padding:2px 0 2px 16px;font-family:${SANS};font-size:13px;line-height:1.7;color:${C.muted};">${notes.filter(Boolean).map(esc).join("<br>")}</td>
+</tr></table>
+</td></tr>`;
 }
 
-/** E-mail ihned po vytvoření objednávky */
+/** E-mail ihned po vytvoření objednávky – objednávka přijata, čeká na úhradu */
 export function orderReceivedMail(
   order: OrderWithItems,
   settings: Settings,
@@ -106,59 +197,98 @@ export function orderReceivedMail(
 
   if (order.paymentMethod === "BANK_TRANSFER" && opts.transfer) {
     const t = opts.transfer;
-    payment = `<h2 style="font-family:Georgia,serif;font-size:18px;margin:24px 0 8px;">Platební údaje</h2>
-<table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;">
-<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Číslo účtu</td><td><strong>${esc(t.account)}</strong></td></tr>
-<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">IBAN</td><td>${esc(formatIban(t.iban))}</td></tr>
-<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Variabilní symbol</td><td><strong>${esc(t.variableSymbol)}</strong></td></tr>
-<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Částka</td><td><strong>${formatCzk(t.amountCzk)}</strong></td></tr>
-<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Zaplaťte do</td><td>${esc(formatDateTime(order.reservedUntil))}</td></tr>
-</table>
-${opts.qrCid ? `<p><img src="cid:${opts.qrCid}" width="180" height="180" alt="QR platba"></p>` : ""}
-<p style="font-size:14px;">Po připsání platby vám pošleme potvrzení. Nezaplacená objednávka se po uplynutí lhůty automaticky zruší.</p>`;
-    paymentText = `Platební údaje:\nÚčet: ${t.account}\nIBAN: ${t.iban}\nVS: ${t.variableSymbol}\nČástka: ${formatCzk(t.amountCzk)}\nZaplaťte do: ${formatDateTime(order.reservedUntil)}\n`;
+    const qr = opts.qrCid
+      ? `<td style="width:164px;padding-left:24px;vertical-align:top;" align="right">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px;"><img src="cid:${opts.qrCid}" width="140" height="140" alt="QR platba" style="display:block;"></td></tr></table>
+<div style="font-family:${SANS};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.muted};margin-top:8px;text-align:center;">QR platba</div>
+</td>`
+      : "";
+    payment = `${sectionTitle("Platební údaje")}
+<tr><td style="padding:4px 40px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="vertical-align:top;">${rows(
+      [
+        ["Číslo účtu", `<strong>${esc(t.account)}</strong>`],
+        ["IBAN", esc(formatIban(t.iban))],
+        ["Variabilní symbol", `<strong>${esc(t.variableSymbol)}</strong>`],
+        ["Splatnost", esc(formatDateTime(order.reservedUntil))],
+        ["K úhradě", formatCzk(t.amountCzk)],
+      ],
+      { strongLast: true },
+    )}</td>
+${qr}
+</tr></table>
+</td></tr>
+${para("Nezaplacená objednávka se po splatnosti automaticky zruší. Po připsání platby obdržíte potvrzení.", { muted: true })}`;
+    paymentText = `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nSplatnost: ${formatDateTime(order.reservedUntil)}\nK úhradě: ${formatCzk(t.amountCzk)}\n`;
   } else {
-    payment = `<p>Pokud platba kartou neproběhla, můžete ji dokončit na stránce objednávky:</p>${button(opts.orderUrl, "Zobrazit objednávku")}`;
+    payment = `${para("Pokud platba kartou neproběhla, dokončíte ji na stránce objednávky.", { muted: true, center: true })}
+${button(opts.orderUrl, "Dokončit platbu")}`;
     paymentText = `Pokud platba neproběhla, dokončete ji zde: ${opts.orderUrl}\n`;
   }
 
   const html = layout(
     settings,
     title,
-    `<p>Dobrý den, ${esc(order.firstName)},</p>
-<p>děkujeme za objednávku z limitované edice Mistři Evropy – Bělehrad 1976. Objednávka čeká na zaplacení.</p>
+    `${statusBlock("pending", "Objednávka přijata", "Čeká na úhradu")}
+${para(`Objednávka č. <span style="color:${C.goldLight};">${esc(order.number)}</span> · ${esc(formatDateTime(order.createdAt))}`, { muted: true, center: true })}
+${sectionTitle("Objednávka")}
 ${itemsTable(order)}
 ${payment}
-${deliveryHtml(order, settings)}
-${madeToOrderNote(order, settings)}
-${order.eveningInterest ? `<p>Po zaplacení vás zařadíme do losování o vstup na slavnostní večer. <strong>${EVENING_ENTRY_NOTE}</strong></p>` : ""}
-<p style="font-size:13px;color:#6b6252;">Stav objednávky: <a href="${esc(opts.orderUrl)}">${esc(opts.orderUrl)}</a></p>`,
+${deliveryBlock(order, settings)}
+${notesBlock(order, settings)}
+${order.eveningInterest ? para(`Po zaplacení budete zařazeni do losování o vstup na slavnostní večer. ${esc(EVENING_ENTRY_NOTE)}`, { muted: true }) : ""}
+${order.paymentMethod === "BANK_TRANSFER" ? button(opts.orderUrl, "Stav objednávky") : ""}`,
+    `Čeká na úhradu ${formatCzk(order.totalCzk)}.`,
   );
 
-  const text = `Dobrý den, ${order.firstName},\n\nděkujeme za objednávku ${order.number}. Objednávka čeká na zaplacení.\n\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na slavnostní večer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `OBJEDNÁVKA PŘIJATA – ČEKÁ NA ÚHRADU\nObjednávka č. ${order.number}\n\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení budete zařazeni do losování o vstup na slavnostní večer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
 /** Potvrzení o přijetí platby (s PDF v příloze) */
 export function paymentConfirmedMail(order: OrderWithItems, settings: Settings, opts: { orderUrl: string }) {
   const title = `Platba za objednávku ${order.number} přijata`;
+  const paidAt = formatDateTime(order.paidAt ?? new Date());
+
   const html = layout(
     settings,
     title,
-    `<p>Dobrý den, ${esc(order.firstName)},</p>
-<p>potvrzujeme přijetí platby <strong>${formatCzk(order.totalCzk)}</strong> za objednávku <strong>${esc(order.number)}</strong>. Potvrzení o zaplacení najdete v příloze (PDF).</p>
+    `${statusBlock("paid", "Platba přijata", `Objednávka č. ${order.number}`)}
+<tr><td style="padding:30px 40px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel2}" style="background:${C.panel2};border:1px solid ${C.line};border-top:2px solid ${C.gold};"><tr><td style="padding:22px 24px 16px;">
+<div style="font-family:${SANS};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${C.gold};padding-bottom:10px;">Potvrzení o přijetí platby</div>
+${rows(
+      [
+        ["Číslo objednávky", esc(order.number)],
+        ["Variabilní symbol", esc(order.number)],
+        ["Datum přijetí platby", esc(paidAt)],
+        ["Způsob platby", esc(PAYMENT_LABEL[order.paymentMethod])],
+        ["Přijatá částka", formatCzk(order.totalCzk)],
+      ],
+      { strongLast: true },
+    )}
+</td></tr></table>
+</td></tr>
+${para("Potvrzení o zaplacení je v příloze (PDF). Nejedná se o daňový doklad.", { muted: true })}
+${sectionTitle("Předmět platby")}
 ${itemsTable(order)}
-${deliveryHtml(order, settings)}
-${madeToOrderNote(order, settings)}
+${deliveryBlock(order, settings)}
+${notesBlock(order, settings)}
 ${
   order.eveningInterest
-    ? `<p>Jste zařazeni do losování o vstup na slavnostní večer ${esc(settings.str("evening.date"))}. <strong>${EVENING_ENTRY_NOTE}</strong> O výsledku vás budeme informovat.</p>`
+    ? para(
+        `Jste zařazeni do losování o vstup na slavnostní večer ${esc(settings.str("evening.date"))}. ${esc(EVENING_ENTRY_NOTE)} O výsledku vás budeme informovat.`,
+        { muted: true },
+      )
     : ""
 }
-<p>O odeslání vás budeme informovat dalším e-mailem.</p>
-<p>Děkujeme, že podporujete Nadaci fotbalových internacionálů.</p>`,
+${para("O odeslání vás budeme informovat dalším e-mailem.", { muted: true })}
+${button(opts.orderUrl, "Stav objednávky")}`,
+    `Přijato ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
-  const text = `Dobrý den, ${order.firstName},\n\npotvrzujeme přijetí platby ${formatCzk(order.totalCzk)} za objednávku ${order.number}. Potvrzení najdete v příloze.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na slavnostní večer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
+
+  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzení o zaplacení je v příloze (PDF). Nejedná se o daňový doklad.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na slavnostní večer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -166,22 +296,31 @@ ${
 export function ownerPaidMail(order: OrderWithItems, settings: Settings, opts: { adminUrl: string; oversold: boolean }) {
   const title = `Zaplacená objednávka ${order.number} – ${formatCzk(order.totalCzk)}`;
   const billing = [order.companyName, order.ico && `IČO ${order.ico}`, order.dic && `DIČ ${order.dic}`].filter(Boolean).join(", ");
+  const customer: [string, string][] = [
+    ["Jméno", esc(`${order.firstName} ${order.lastName}`)],
+    ["E-mail", esc(order.email)],
+    ["Telefon", esc(order.phone)],
+  ];
+  if (billing) customer.push(["Fakturační údaje", esc(billing)]);
+  customer.push(["Platba", esc(PAYMENT_LABEL[order.paymentMethod])], ["Zájem o slavnostní večer", order.eveningInterest ? "ANO" : "ne"]);
+
   const html = layout(
     settings,
     title,
-    `${
-      opts.oversold
-        ? `<p style="background:#fde8e8;border-left:4px solid #b0262c;padding:10px 12px;"><strong>Pozor:</strong> objednávka byla zaplacena přes GoPay až po vypršení rezervace a box už nebyl skladem. Vyřešte prosím ručně (vrácení peněz nebo box z rezervy).</p>`
-        : ""
-    }
-<p><strong>${esc(order.firstName)} ${esc(order.lastName)}</strong><br>${esc(order.email)} · ${esc(order.phone)}</p>
-${billing ? `<p>Fakturační údaje: ${esc(billing)}</p>` : ""}
+    `${statusBlock("paid", "Zaplacená objednávka", `č. ${order.number}`)}
+${
+  opts.oversold
+    ? `<tr><td style="padding:22px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td bgcolor="${C.panel2}" style="background:${C.panel2};border-left:3px solid ${C.seal};padding:12px 16px;font-family:${SANS};font-size:14px;line-height:1.6;color:${C.cream};"><strong>Pozor:</strong> objednávka byla zaplacena přes GoPay až po vypršení rezervace a box už nebyl skladem. Vyřešte prosím ručně (vrácení peněz nebo box z rezervy).</td></tr></table></td></tr>`
+    : ""
+}
+${sectionTitle("Zákazník")}
+<tr><td style="padding:4px 40px 0;">${rows(customer)}</td></tr>
+${order.note ? para(`Poznámka zákazníka: ${esc(order.note)}`, { muted: true }) : ""}
+${sectionTitle("Objednávka")}
 ${itemsTable(order)}
-<p>Platba: ${esc(PAYMENT_LABEL[order.paymentMethod])}</p>
-${deliveryHtml(order, settings)}
-<p>Zájem o slavnostní večer: <strong>${order.eveningInterest ? "ANO" : "ne"}</strong></p>
-${order.note ? `<p>Poznámka zákazníka: ${esc(order.note)}</p>` : ""}
+${deliveryBlock(order, settings)}
 ${button(opts.adminUrl, "Otevřít v administraci")}`,
+    `${order.firstName} ${order.lastName} – ${formatCzk(order.totalCzk)}`,
   );
   const text = `${title}\n\n${order.firstName} ${order.lastName}, ${order.email}, ${order.phone}\n${billing}\n\n${itemsText(order)}\n\nPlatba: ${PAYMENT_LABEL[order.paymentMethod]}\nDoprava: ${DELIVERY_LABEL[order.deliveryMethod]}\nVečer: ${order.eveningInterest ? "ANO" : "ne"}\n${order.note ? `Poznámka: ${order.note}\n` : ""}\n${opts.adminUrl}\n`;
   return { subject: title, html, text };
@@ -194,32 +333,35 @@ export function shippedMail(order: OrderWithItems, settings: Settings, opts: { o
     const html = layout(
       settings,
       title,
-      `<p>Dobrý den, ${esc(order.firstName)},</p>
-<p>vaše objednávka <strong>${esc(order.number)}</strong> je připravena k osobnímu převzetí.</p>
-<p><strong>Adresa:</strong> ${esc(settings.str("pickup.address"))}<br>${esc(settings.str("pickup.note"))}</p>
-<p>Při převzetí prosím prokažte věk 18+ a uveďte číslo objednávky.</p>`,
+      `${statusBlock("neutral", "Připraveno k převzetí", `Objednávka č. ${order.number}`)}
+${deliveryBlock(order, settings)}
+${para("Při převzetí uveďte číslo objednávky a prokažte věk 18+ dokladem totožnosti.", { muted: true })}`,
+      `Objednávka ${order.number} čeká na převzetí.`,
     );
-    const text = `Dobrý den, ${order.firstName},\n\nobjednávka ${order.number} je připravena k převzetí.\nAdresa: ${settings.str("pickup.address")}\n${settings.str("pickup.note")}\n\nPři převzetí prokažte věk 18+.\n`;
+    const text = `PŘIPRAVENO K PŘEVZETÍ\nObjednávka č. ${order.number}\n\nAdresa: ${settings.str("pickup.address")}\n${settings.str("pickup.note")}\n\nPři převzetí uveďte číslo objednávky a prokažte věk 18+.\n`;
     return { subject: title, html, text };
   }
 
   const title = `Objednávka ${order.number} byla odeslána`;
+  const shipment: [string, string][] = [["Dopravce", esc(order.carrier)]];
+  if (order.trackingNumber) shipment.push(["Číslo zásilky", `<strong>${esc(order.trackingNumber)}</strong>`]);
+
   const html = layout(
     settings,
     title,
-    `<p>Dobrý den, ${esc(order.firstName)},</p>
-<p>vaši objednávku <strong>${esc(order.number)}</strong> jsme předali dopravci.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;">
-<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Dopravce</td><td><strong>${esc(order.carrier)}</strong></td></tr>
-${order.trackingNumber ? `<tr><td style="padding:3px 16px 3px 0;color:#6b6252;">Číslo zásilky</td><td><strong>${esc(order.trackingNumber)}</strong></td></tr>` : ""}
-</table>
-${deliveryHtml(order, settings)}
-${
+    `${statusBlock("neutral", "Odesláno", `Objednávka č. ${order.number}`)}
+${sectionTitle("Zásilka")}
+<tr><td style="padding:4px 40px 0;">${rows(shipment)}</td></tr>
+${deliveryBlock(order, settings)}
+${para(
   order.deliveryMethod === "PACKETA"
-    ? "<p>Až zásilka dorazí na výdejní místo, Zásilkovna vám pošle zprávu s kódem pro vyzvednutí. Zásilka obsahuje alkohol – při vyzvednutí prokažte věk 18+ dokladem totožnosti.</p>"
-    : "<p>Zásilka obsahuje alkohol – při převzetí může dopravce ověřit věk 18+.</p>"
-}`,
+    ? "Jakmile zásilka dorazí na výdejní místo, Zásilkovna vám pošle kód pro vyzvednutí. Zásilka obsahuje alkohol – při vyzvednutí prokažte věk 18+ dokladem totožnosti."
+    : "Zásilka obsahuje alkohol – při převzetí může dopravce ověřit věk 18+.",
+  { muted: true },
+)}
+${button(opts.orderUrl, "Stav objednávky")}`,
+    `Objednávka ${order.number} je na cestě.`,
   );
-  const text = `Dobrý den, ${order.firstName},\n\nobjednávku ${order.number} jsme předali dopravci.\nDopravce: ${order.carrier}\n${order.trackingNumber ? `Číslo zásilky: ${order.trackingNumber}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `ODESLÁNO\nObjednávka č. ${order.number}\n\nDopravce: ${order.carrier}\n${order.trackingNumber ? `Číslo zásilky: ${order.trackingNumber}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }

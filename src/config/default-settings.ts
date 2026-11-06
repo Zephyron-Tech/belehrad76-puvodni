@@ -83,6 +83,11 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
     value: "7",
     description: "Jak dlouho se drží box při platbě převodem (dny). Pak se nezaplacená objednávka zruší.",
   },
+  {
+    key: "payment.bank_transfer",
+    value: "false",
+    description: "Platba bankovním převodem / QR kódem (true/false). Vypnuto = platí se jen přes platební bránu GoPay.",
+  },
   { key: "bank.account", value: "303642799/0300", description: "Číslo účtu pro platbu převodem (formát číslo/kód banky)" },
 
   // Texty úvodní stránky
