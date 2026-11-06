@@ -139,6 +139,8 @@ model Order {
   verifyState       TransferVerifyState?
   /// Kdy odešel poslední ověřovací e-mail (další za 24 h, dokud ověřovatel nerozhodne)
   verifyMailSentAt  DateTime?
+  /// Zákazník klikl „Zaplaceno“ – ověřovateli hned odejde ověřovací e-mail (rychlejší ověření)
+  paymentClaimedAt  DateTime?
   reminderSentAt    DateTime?
   reminderCount     Int                  @default(0)
   /// Kdy se naposledy změnil stav objednávky nebo stav ověření („jak dlouho je v posledním stavu“)

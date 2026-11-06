@@ -39,7 +39,7 @@ export function verifyPageUrl(verifyToken: string, action?: VerifyAction) {
   return `${env.appUrl}/overeni-platby/${verifyToken}${action ? `?akce=${akce[action]}` : ""}`;
 }
 
-async function loadOrder(where: { id: number } | { verifyToken: string }) {
+async function loadOrder(where: { id: number } | { verifyToken: string } | { publicToken: string }) {
   return prisma.order.findUnique({ where: where as never, include: { items: true } });
 }
 
@@ -53,7 +53,7 @@ function isOpenTransfer(order: { status: string; paymentMethod: string; anonymiz
  * Vydá nový jednorázový token (odkazy ve starších e-mailech přestanou platit) a uloží čas odeslání –
  * další e-mail nejdřív za 24 h.
  */
-export async function sendVerifyMail(orderId: number, opts: { repeat?: boolean; now?: Date } = {}) {
+export async function sendVerifyMail(orderId: number, opts: { repeat?: boolean; claimed?: boolean; now?: Date } = {}) {
   const order = await loadOrder({ id: orderId });
   if (!order || !isOpenTransfer(order) || order.verifyState !== "WAITING") return false;
   const settings = await getSettings();
@@ -69,6 +69,7 @@ export async function sendVerifyMail(orderId: number, opts: { repeat?: boolean; 
   const mail = verifyPaymentMail(order, settings, {
     transfer,
     repeat: !!opts.repeat,
+    claimed: !!opts.claimed,
     links: {
       paid: verifyPageUrl(token, "paid"),
       manual: verifyPageUrl(token, "manual"),
@@ -249,4 +250,31 @@ export async function switchGopayToTransfer(orderId: number, now = new Date()): 
   // ověřovatel ve stejnou chvíli; při chybě ho dorovná opakování (resendPendingVerifications)
   await sendVerifyMail(orderId, { now }).catch((err) => console.error("[verify] verify mail failed", orderId, err));
   return true;
+}
+
+/** Opakované kliknutí na „Zaplatil jsem“ v této době už další ověřovací e-mail neposílá */
+export const CLAIM_RESEND_MS = 10 * 60_000;
+
+/**
+ * Zákazník klikl „Zaplatil jsem“ (jen z upomínky): zaznamená čas a ověřovateli hned pošle ověřovací e-mail „Zákazník hlásí platbu“
+ * s novými jednorázovými odkazy (starší přestanou platit, 24h cyklus začne znovu). Stav objednávky nemění;
+ * pokud ji admin řešil ručně („vyřeším sám“), ověřování znovu zapne. Opakované kliknutí do 10 minut e-mail
+ * znovu neposílá. Vrací objednávku, nebo null, když nejde o nezaplacenou objednávku převodem.
+ */
+export async function claimPayment(publicToken: string, ip: string | null, now = new Date()) {
+  const order = await loadOrder({ publicToken });
+  if (!order || !isOpenTransfer(order)) return null;
+  if (order.paymentClaimedAt && now.getTime() - order.paymentClaimedAt.getTime() < CLAIM_RESEND_MS) return order;
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      paymentClaimedAt: now,
+      verifyState: "WAITING",
+      ...(order.verifyState !== "WAITING" ? { stateChangedAt: now } : {}),
+    },
+  });
+  await audit({ action: "payment_claimed", orderId: order.id }, { source: "customer", ip });
+  await sendVerifyMail(order.id, { claimed: true, now }).catch((err) => console.error("[verify] claim mail failed", order.id, err));
+  return order;
 }

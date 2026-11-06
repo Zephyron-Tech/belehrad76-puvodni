@@ -86,6 +86,7 @@ export default async function VerifyPaymentPage({ params, searchParams }: Props)
 
   const rows: [string, string][] = [
     ["Objednáno", formatDateTime(order.createdAt)],
+    ["Zákazník hlásí zaplaceno", order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : "zatím ne"],
     ["Zákazník", `${order.firstName} ${order.lastName}`],
     ["E-mail / telefon", `${order.email} · ${order.phone}`],
     ["Doprava", DELIVERY_LABEL[order.deliveryMethod]],

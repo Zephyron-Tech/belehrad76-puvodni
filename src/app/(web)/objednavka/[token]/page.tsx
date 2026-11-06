@@ -16,11 +16,11 @@ export const metadata: Metadata = { title: "Objednávka", robots: { index: false
 
 type Props = {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ platba?: string }>;
+  searchParams: Promise<{ platba?: string; zaplaceno?: string; upominka?: string }>;
 };
 
 export default async function OrderPage({ params, searchParams }: Props) {
-  const [{ token }, { platba }] = await Promise.all([params, searchParams]);
+  const [{ token }, { platba, zaplaceno, upominka }] = await Promise.all([params, searchParams]);
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) notFound();
 
   let order = await prisma.order.findUnique({ where: { publicToken: token }, include: { items: true } });
@@ -115,7 +115,23 @@ export default async function OrderPage({ params, searchParams }: Props) {
             {verifyTime && <p>Ověření platby obvykle trvá {verifyTime}. Jakmile platbu přijmeme, zašleme vám potvrzení.</p>}
             {cancelNotice && <p>{cancelNotice}</p>}
           </div>
-          <div className="mt-8 max-w-sm">
+          <div id="zaplatil" className="mt-8 max-w-sm scroll-mt-24">
+            {zaplaceno === "1" ? (
+              <p className="mb-4 border border-ok/50 bg-ok/10 p-4 text-sm text-cream" role="status">
+                Děkujeme, platbu ověříme.{verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>} Jakmile ji přijmeme,
+                zašleme vám potvrzení.
+              </p>
+            ) : (
+              // „Zaplatil jsem“ jen po příchodu z upomínky (SPECIFIKACE 5b)
+              upominka === "1" && (
+                <form method="post" action={`/api/objednavka/${order.publicToken}/zaplaceno`} className="mb-4">
+                  <button className="w-full bg-gold px-6 py-3 font-bold uppercase tracking-wider text-ink transition hover:bg-gold-light">
+                    Zaplatil jsem
+                  </button>
+                  <p className="mt-2 text-sm text-muted">Potvrďte, že jste platbu odeslali – ověříme ji přednostně.</p>
+                </form>
+              )
+            )}
             <Link
               href="/"
               className="block w-full bg-gold px-6 py-3 text-center font-bold uppercase tracking-wider text-ink transition hover:bg-gold-light"

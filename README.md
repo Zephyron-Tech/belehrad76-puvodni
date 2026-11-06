@@ -116,7 +116,8 @@ Stavy: **Přijatá (čeká na platbu) → Zaplacená → Odeslaná / Připraven�
 ### Platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)
 
 1. Zákazník po objednávce převodem vidí platební údaje a QR kód (stránka objednávky i e-mail), „Ověření platby
-   obvykle trvá 5–9 hodin“ a na stránce tlačítko **Přejít na úvod**. Platbu sám nehlásí.
+   obvykle trvá 5–9 hodin“ a na stránce tlačítko **Přejít na úvod**. Jen **upomínka** má tlačítko **Zaplatil jsem**:
+   po potvrzení odejde ověřovateli hned ověřovací e-mail „Zákazník hlásí platbu“ (nejvýš 1× za 10 minut).
 2. Hned po objednávce odejde **ověřovací e-mail** na `payment.verify_email`: VS, částka, účet, zákazník, položky
    a odkazy **Zaplaceno / Nezaplaceno – poslat upomínku / Nezaplaceno – vyřeším sám**. Odkazy fungují bez přihlášení,
    otevřou stránku `/overeni-platby/…` se shrnutím – rozhoduje až tlačítko (skenery pošty odkazy otevírají samy).

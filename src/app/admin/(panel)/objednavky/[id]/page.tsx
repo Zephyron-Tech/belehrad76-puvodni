@@ -20,7 +20,7 @@ const ACTION_LABEL: Record<string, string> = {
   payment_refunded: "Platba vrácena (GoPay)",
   duplicate_payment: "⚠ Druhá platba stejné objednávky (GoPay) – vrátit",
   packeta_created: "Zásilka založena v Zásilkovně",
-  payment_claimed: "Zákazník: „Zaplatil jsem“",
+  payment_claimed: "Zákazník: „Zaplatil jsem“ – ověřovateli odešel ověřovací e-mail",
   verify_manual: "Platba převodem: nezaplaceno – vyřeší admin",
   payment_reminder: "Upomínka platby odeslána zákazníkovi",
   gopay_switched_to_transfer: "Nezaplaceno v bráně – převedeno na platbu převodem / QR",
@@ -229,6 +229,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               orderId={order.id}
               label={verifyLabel}
               inStateFor={formatDuration(order.stateChangedAt)}
+              claimedAt={order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : null}
               verifyMailSentAt={order.verifyMailSentAt ? formatDateTime(order.verifyMailSentAt) : null}
               reminders={order.reminderCount > 0 ? `${order.reminderCount}× (poslední ${formatDateTime(order.reminderSentAt)})` : null}
               verifyEmail={settings.str("payment.verify_email")}

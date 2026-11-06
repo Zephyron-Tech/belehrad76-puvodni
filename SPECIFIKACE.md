@@ -132,10 +132,13 @@ v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
 2. **Po vytvoření objednávky převodem** zákazník vidí stránku objednávky a dostane e-mail „Objednávka přijata“:
    číslo účtu, IBAN, variabilní symbol (= číslo objednávky), částka a QR kód (SPD). Zároveň **hned** odejde
    **ověřovací e-mail** ověřovateli.
-3. **Zákazník platbu nehlásí** (tlačítko „Zaplatil jsem“ zrušeno 7. 11. 2026). Stránka objednávky má pod platebními
-   údaji tlačítko **„Přejít na úvod“** s textem „Po zaplacení přejděte na úvod.“ Věta o době ověření
-   (`payment.verify_time`, „Ověření platby obvykle trvá 5–9 hodin“) je u platebních údajů, v e-mailu
-   „Objednávka přijata“ a v upomínce.
+3. **Tlačítko „Zaplatil jsem“ je jen v upomínce** (7. 11. 2026). Vede na stránku objednávky, kde se kliknutí
+   potvrdí (samotný odkaz nic nemění). Po potvrzení zákazník vidí „Děkujeme, platbu ověříme. Ověření platby obvykle
+   trvá 5–9 hodin.“ a ověřovateli **hned odejde ověřovací e-mail „Zákazník hlásí platbu“** s novými jednorázovými
+   odkazy (starší přestanou platit, 24h cyklus začne znovu; po „vyřeším sám“ se ověřování znovu zapne). Opakované
+   kliknutí do 10 minut další e-mail neposílá. Stav objednávky se nemění. Jinde (stránka objednávky, „Objednávka
+   přijata“, převedení z GoPay) tlačítko není – stránka objednávky má jen **„Přejít na úvod“**. Věta o době ověření
+   (`payment.verify_time`) je u platebních údajů, v e-mailu „Objednávka přijata“ a v upomínce.
 4. **Ověřovací e-mail** obsahuje vše pro kontrolu v internetovém bankovnictví: variabilní symbol a přesnou částku
    (zvýrazněné), účet/IBAN příjemce, datum objednávky, jméno, e-mail, telefon, firmu/IČO, položky a doručení.
    Obsahuje tři odkazy, které fungují **bez přihlášení** (z mobilu). Odkaz otevře stránku se shrnutím a tlačítkem

@@ -112,7 +112,7 @@ function outlineButton(href: string, label: string): string {
 function transferBlock(
   settings: Settings,
   t: TransferInstructions,
-  opts: { orderUrl: string; qrCid?: string; cancelFrom: Date },
+  opts: { orderUrl: string; qrCid?: string; cancelFrom: Date; claimButton?: boolean },
 ): string {
   const qr = opts.qrCid
     ? `<td style="width:164px;padding-left:24px;vertical-align:top;" align="right">
@@ -137,13 +137,25 @@ ${qr}
 </tr></table>
 </td></tr>
 ${para(`Platbu prosím odešlete na uvedený účet, nebo naskenujte QR kód v aplikaci své banky.${verifyTime ? ` Ověření platby obvykle trvá ${esc(verifyTime)}` : ""}${verifyTime ? "; jakmile ji přijmeme, zašleme vám potvrzení." : " Jakmile ji přijmeme, zašleme vám potvrzení."}`, { muted: true })}
-${para(esc(transferCancelNotice(settings.num("reservation.transfer_days"), opts.cancelFrom)), { muted: true })}`;
+${para(esc(transferCancelNotice(settings.num("reservation.transfer_days"), opts.cancelFrom)), { muted: true })}
+${opts.claimButton ? button(claimUrl(opts.orderUrl), "Zaplatil jsem") : ""}`;
 }
 
-function transferText(settings: Settings, t: TransferInstructions, orderUrl: string, cancelFrom: Date): string {
+/** Odkaz z upomínky na stránku objednávky, kde zákazník potvrdí „Zaplatil jsem“ (GET nic nemění). */
+function claimUrl(orderUrl: string) {
+  return `${orderUrl}?upominka=1#zaplatil`;
+}
+
+function transferText(
+  settings: Settings,
+  t: TransferInstructions,
+  orderUrl: string,
+  cancelFrom: Date,
+  opts: { claimButton?: boolean } = {},
+): string {
   const verifyTime = settings.str("payment.verify_time");
   const cancel = transferCancelNotice(settings.num("reservation.transfer_days"), cancelFrom);
-  return `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nK úhradě: ${formatCzk(t.amountCzk)}\n\nPlatbu prosím odešlete na uvedený účet, nebo naskenujte QR kód v aplikaci své banky.\n${verifyTime ? `Ověření platby obvykle trvá ${verifyTime}.\n` : ""}${cancel ? `${cancel}\n` : ""}`;
+  return `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nK úhradě: ${formatCzk(t.amountCzk)}\n\nPlatbu prosím odešlete na uvedený účet, nebo naskenujte QR kód v aplikaci své banky.\n${verifyTime ? `Ověření platby obvykle trvá ${verifyTime}.\n` : ""}${cancel ? `${cancel}\n` : ""}${opts.claimButton ? `\nZaplatil jsem: ${claimUrl(orderUrl)}\n` : ""}`;
 }
 
 function layout(settings: Settings, title: string, body: string, preheader: string): string {
@@ -419,14 +431,23 @@ export function verifyPaymentMail(
   opts: {
     transfer: TransferInstructions;
     repeat: boolean;
+    /** Odesláno, protože zákazník klikl „Zaplatil jsem“ (v upomínce) */
+    claimed?: boolean;
     links: { paid: string; manual: string; remind: string };
     adminUrl: string;
   },
 ) {
   const t = opts.transfer;
-  const title = opts.repeat
-    ? `Stále neověřeno: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`
-    : `Ověřte platbu: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`;
+  const title = opts.claimed
+    ? `Zákazník hlásí platbu: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`
+    : opts.repeat
+      ? `Stále neověřeno: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`
+      : `Ověřte platbu: VS ${t.variableSymbol} – ${formatCzk(t.amountCzk)}`;
+  const statusSub = opts.claimed
+    ? `Zákazník hlásí zaplaceno · ${formatDateTime(order.paymentClaimedAt ?? new Date())}`
+    : opts.repeat
+      ? "Opakované upozornění · zatím nerozhodnuto"
+      : `Převodem · objednávka č. ${order.number}`;
   const billing = [order.companyName, order.ico && `IČO ${order.ico}`, order.dic && `DIČ ${order.dic}`].filter(Boolean).join(", ");
 
   const lookup: [string, string][] = [
@@ -436,6 +457,7 @@ export function verifyPaymentMail(
     ["IBAN", esc(formatIban(t.iban))],
     ["Objednáno", esc(formatDateTime(order.createdAt))],
   ];
+  if (order.paymentClaimedAt) lookup.push(["Zákazník hlásí zaplaceno", esc(formatDateTime(order.paymentClaimedAt))]);
   if (order.reminderCount > 0) lookup.push(["Upomínky", `${order.reminderCount}× (poslední ${esc(formatDateTime(order.reminderSentAt))})`]);
 
   const customer: [string, string][] = [
@@ -448,7 +470,7 @@ export function verifyPaymentMail(
   const html = layout(
     settings,
     title,
-    `${statusBlock("pending", "Ověřte platbu", opts.repeat ? "Opakované upozornění · zatím nerozhodnuto" : `Převodem · objednávka č. ${order.number}`)}
+    `${statusBlock("pending", "Ověřte platbu", statusSub)}
 ${para("V internetovém bankovnictví vyhledejte příchozí platbu s tímto variabilním symbolem a částkou.", { muted: true, center: true })}
 <tr><td style="padding:24px 40px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel2}" style="background:${C.panel2};border:1px solid ${C.line};border-top:2px solid ${C.gold};"><tr><td style="padding:18px 24px 14px;">
@@ -468,14 +490,14 @@ ${outlineButton(opts.adminUrl, "Otevřít v administraci")}`,
     `VS ${t.variableSymbol}, ${formatCzk(t.amountCzk)}, ${order.firstName} ${order.lastName}`,
   );
 
-  const text = `${opts.repeat ? "STÁLE NEOVĚŘENO" : "OVĚŘTE PLATBU"} – objednávka ${order.number}
+  const text = `${opts.claimed ? "ZÁKAZNÍK HLÁSÍ PLATBU" : opts.repeat ? "STÁLE NEOVĚŘENO" : "OVĚŘTE PLATBU"} – objednávka ${order.number}
 
 V internetovém bankovnictví vyhledejte příchozí platbu:
 Variabilní symbol: ${t.variableSymbol}
 Částka: ${formatCzk(t.amountCzk)}
 Na účet: ${t.account} (IBAN ${t.iban})
 Objednáno: ${formatDateTime(order.createdAt)}
-${order.reminderCount > 0 ? `Upomínky: ${order.reminderCount}×\n` : ""}
+${order.paymentClaimedAt ? `Zákazník hlásí zaplaceno: ${formatDateTime(order.paymentClaimedAt)}\n` : ""}${order.reminderCount > 0 ? `Upomínky: ${order.reminderCount}×\n` : ""}
 Zaplaceno: ${opts.links.paid}
 Nezaplaceno – poslat upomínku: ${opts.links.remind}
 Nezaplaceno – vyřeším sám: ${opts.links.manual}
@@ -501,14 +523,14 @@ export function paymentReminderMail(
     settings,
     title,
     `${statusBlock("pending", "Připomínka platby", `Objednávka č. ${order.number}`)}
-${para("Dovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, považujte prosím tuto zprávu za bezpředmětnou.", { center: true })}
-${transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: new Date() })}
+${para("Dovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, klikněte prosím na „Zaplatil jsem“ – platbu ověříme přednostně.", { center: true })}
+${transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: new Date(), claimButton: true })}
 ${sectionTitle("Objednávka")}
 ${itemsTable(order)}
 ${deliveryBlock(order, settings)}`,
     `Čekáme na platbu ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
-  const text = `PŘIPOMÍNKA PLATBY\nObjednávka č. ${order.number}\n\nDovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, považujte prosím tuto zprávu za bezpředmětnou.\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
+  const text = `PŘIPOMÍNKA PLATBY\nObjednávka č. ${order.number}\n\nDovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, klikněte prosím na „Zaplatil jsem“ – platbu ověříme přednostně.\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date(), { claimButton: true })}\n${itemsText(order)}\n`;
   return { subject: title, html, text };
 }
 
