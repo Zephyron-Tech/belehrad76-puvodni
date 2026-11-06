@@ -133,7 +133,8 @@ Stavy: **Přijatá (čeká na platbu) → Zaplacená → Odeslaná / Připraven�
    všude vidí „Pokud platbu neobdržíme do 7 dní (do …), objednávku zrušíme.“ – jen informace (`reservation.transfer_days`).
   Pozdě došlou platbu lze označit i u zrušené objednávky (box se znovu odečte, pokud je skladem).
 - **Odesláno:** zadat dopravce a číslo zásilky → zákazníkovi odejde e-mail. U osobního převzetí e-mail „připraveno k převzetí“.
-- **Zrušit:** box se vrátí na sklad; u zaplacené objednávky je nutné vrátit peníze ručně.
+- **Zrušit:** box se vrátí na sklad; u zaplacené objednávky je nutné vrátit peníze ručně. Zaškrtávátko „Poslat zákazníkovi
+  e-mail o zrušení“ (výchozí zapnuto) – e-mail „Objednávka zrušena“, u zaplacené s informací o vrácení peněz.
 - **Exporty:** CSV objednávek pro účetnictví, CSV zájemců o slavnostní večer (pro organizátora losování).
 - **Historie změn:** u každé objednávky kdy, odkud (IP) a volitelně kdo (iniciály) – účet je společný.
 - **GDPR:** anonymizace jednotlivé dokončené/zrušené objednávky; hromadně

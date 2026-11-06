@@ -2,7 +2,7 @@ import { prisma } from "../db";
 import { env } from "../env";
 import { getSettings, type Settings } from "../settings";
 import { sendMail } from "../mail/transport";
-import { orderReceivedMail, ownerPaidMail, paymentConfirmedMail, shippedMail } from "../mail/templates";
+import { cancelledMail, orderReceivedMail, ownerPaidMail, paymentConfirmedMail, shippedMail } from "../mail/templates";
 import { paymentConfirmationPdf } from "../pdf";
 import { qrPng, transferInstructions } from "../bank";
 import { sendMetaPurchase } from "../meta-capi";
@@ -105,4 +105,13 @@ export async function sendShippedNotification(orderId: number) {
     const mail = shippedMail(order, settings, { orderUrl: orderLink(order.publicToken) });
     await sendMail({ to: order.email, ...mail, replyTo: customerReplyTo(settings) });
   });
+}
+
+/** Zrušení objednávky (z administrace, pokud admin nechá zaškrtnuté „poslat e-mail“). */
+export async function sendCancelledNotification(orderId: number, opts: { wasPaid: boolean }) {
+  const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true } });
+  if (order.anonymizedAt) return;
+  const settings = await getSettings();
+  const mail = cancelledMail(order, settings, { wasPaid: opts.wasPaid });
+  await sendMail({ to: order.email, ...mail, replyTo: customerReplyTo(settings) });
 }

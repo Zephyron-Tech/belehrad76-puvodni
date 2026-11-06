@@ -559,3 +559,24 @@ ${deliveryBlock(order, settings)}`,
   const text = `OBJEDNÁVKA ZATÍM NENÍ ZAPLACENA\nObjednávka č. ${order.number}\n\nPlatbu v platební bráně jsme od vás neobdrželi. Objednávku můžete dokončit bankovním převodem – stačí naskenovat QR kód v aplikaci své banky.\n\nDŮLEŽITÉ: ${ALREADY_PAID_SWITCHED}\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
   return { subject: title, html, text };
 }
+
+/** Zrušení objednávky – zákazníkovi. U zaplacené objednávky informace o vrácení peněz. */
+export function cancelledMail(order: OrderWithItems, settings: Settings, opts: { wasPaid: boolean }) {
+  const title = `Objednávka ${order.number} byla zrušena`;
+  const contact = settings.str("contact.email");
+  const refund = `Zaplacenou částku ${formatCzk(order.totalCzk)} vám vrátíme stejným způsobem, jakým jste platili. O vrácení vás budeme informovat.`;
+  const unpaid = `Pokud jste mezitím platbu odeslali, ozvěte se nám prosím${contact ? ` na ${contact}` : ""} – platbu dohledáme a vrátíme.`;
+  const html = layout(
+    settings,
+    title,
+    `${statusBlock("neutral", "Objednávka zrušena", `Objednávka č. ${order.number}`)}
+${para("Vaše objednávka byla zrušena.", { center: true })}
+${opts.wasPaid ? notice(esc(refund)) : para(esc(unpaid), { muted: true, center: true })}
+${sectionTitle("Zrušená objednávka")}
+${itemsTable(order)}
+${para(`Děkujeme za váš zájem o limitovanou edici Mistři Evropy – Bělehrad 1976. S dotazy se na nás neváhejte obrátit${contact ? ` na <a href="mailto:${esc(contact)}" style="color:${C.gold};text-decoration:none;">${esc(contact)}</a>` : ""}.`, { muted: true })}`,
+    `Objednávka ${order.number} byla zrušena.`,
+  );
+  const text = `OBJEDNÁVKA ZRUŠENA\nObjednávka č. ${order.number}\n\nVaše objednávka byla zrušena.\n\n${opts.wasPaid ? refund : unpaid}\n\n${itemsText(order)}\n\nDěkujeme za váš zájem o limitovanou edici Mistři Evropy – Bělehrad 1976.${contact ? ` Kontakt: ${contact}` : ""}\n`;
+  return { subject: title, html, text };
+}

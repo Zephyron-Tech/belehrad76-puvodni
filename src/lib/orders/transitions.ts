@@ -3,7 +3,7 @@ import { prisma } from "../db";
 import { audit, type ActionContext } from "../audit";
 import { OutOfStockError, TransitionError } from "../errors";
 import { releaseStock, reserveStock } from "./stock";
-import { sendPaidNotifications, sendShippedNotification } from "./notifications";
+import { sendCancelledNotification, sendPaidNotifications, sendShippedNotification } from "./notifications";
 
 export { TransitionError };
 
@@ -161,10 +161,15 @@ export async function markCompleted(orderId: number, ctx: ActionContext) {
  * Zrušení objednávky. Rezervované boxy se vrátí na sklad.
  * Vrácení peněz u zaplacené objednávky se řeší ručně (GoPay / převodem).
  */
-export async function cancelOrder(orderId: number, ctx: ActionContext, reason?: string) {
-  await prisma.$transaction(async (tx) => {
+export async function cancelOrder(
+  orderId: number,
+  ctx: ActionContext,
+  reason?: string,
+  opts: { notifyCustomer?: boolean } = {},
+) {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await lockOrder(tx, orderId);
-    if (order.status === "CANCELLED") return;
+    if (order.status === "CANCELLED") return null;
     if (order.status !== "PENDING" && order.status !== "PAID") {
       throw new TransitionError("Zrušit lze jen nezaplacenou nebo zaplacenou (neodeslanou) objednávku.");
     }
@@ -178,6 +183,7 @@ export async function cancelOrder(orderId: number, ctx: ActionContext, reason?: 
         reservedUntil: null,
         stateChangedAt: new Date(),
         verifyState: null,
+        verifyToken: null, // ověřovací odkazy už neplatí
       },
     });
     await audit(
@@ -185,7 +191,14 @@ export async function cancelOrder(orderId: number, ctx: ActionContext, reason?: 
       ctx,
       tx,
     );
+    return { wasPaid: order.status === "PAID" };
   });
+
+  if (result && opts.notifyCustomer) {
+    await sendCancelledNotification(orderId, { wasPaid: result.wasPaid }).catch((err) =>
+      console.error("[mail] cancelled notification failed", err),
+    );
+  }
 }
 
 export async function changeStatus(
@@ -193,6 +206,7 @@ export async function changeStatus(
   to: OrderStatus,
   ctx: ActionContext,
   shipment?: { carrier?: string | null; trackingNumber?: string | null },
+  opts: { notifyCustomer?: boolean } = {},
 ) {
   switch (to) {
     case "PAID":
@@ -202,7 +216,7 @@ export async function changeStatus(
     case "COMPLETED":
       return markCompleted(orderId, ctx);
     case "CANCELLED":
-      return cancelOrder(orderId, ctx, "Zrušeno v administraci");
+      return cancelOrder(orderId, ctx, "Zrušeno v administraci", { notifyCustomer: opts.notifyCustomer });
     default:
       throw new TransitionError("Tento přechod není povolen.");
   }

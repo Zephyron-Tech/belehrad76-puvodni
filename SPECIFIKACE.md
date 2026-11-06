@@ -87,6 +87,7 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
 - Okamžitě po vytvoření objednávky přijde e-mail „objednávka přijata“. **GoPay:** bez platebních údajů, podtitulek „Děkujeme za objednávku“ (platí se v bráně, potvrzení platby přijde zvlášť). **Převod:** platební údaje s QR kódem a zvýrazněné upozornění „Pokud jste již zaplatili QR kódem nebo převodem ze stránky objednávky na našem webu, nic dalšího neplaťte – potvrzení vám zašleme, jakmile platbu přijmeme.“ (viz 5b).
 - Provozovatel (Petite Eiffel) dostane e-mail s kompletními údaji o každé zaplacené objednávce (zboží, doprava, adresa nebo osobní převzetí, kontakt, zájem o večer). Podle toho zásilky vyřizuje.
 - E-mail o odeslání zásilky (s dopravcem a číslem zásilky) se posílá automaticky při přepnutí objednávky na „odeslaná“ v administraci (viz 4.4).
+- Při zrušení objednávky v administraci odejde zákazníkovi e-mail „Objednávka zrušena“ (zaškrtávátko, výchozí zapnuto): zrušené položky, kontakt; u zaplacené objednávky informace, že částka bude vrácena stejným způsobem, jakým zákazník platil; u nezaplacené výzva ozvat se, pokud platbu mezitím odeslal.
 
 ### 4.4 Administrace (jen správa objednávek, za přihlášením)
 Plnohodnotná administrace (úprava textů, cen, fotek) se nevytváří. Je jen malá chráněná sekce pro správu objednávek:

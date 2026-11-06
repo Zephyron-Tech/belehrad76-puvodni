@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { createOrder, CheckoutError } from "@/lib/orders/create";
-import { cancelOrder, markCompleted, markPaid, markShipped, TransitionError } from "@/lib/orders/transitions";
+import { cancelOrder, changeStatus, markCompleted, markPaid, markShipped, TransitionError } from "@/lib/orders/transitions";
+import { cancelledMail } from "@/lib/mail/templates";
+import { getSettings } from "@/lib/settings";
 import { expireStaleOrders, retryPaidNotifications } from "@/lib/orders/expire";
 import { AppError, PaymentError, userMessage } from "@/lib/errors";
 import { startGopayPayment, syncGopayPayment } from "@/lib/orders/payments";
@@ -174,6 +176,27 @@ describe("objednávky a sklad", () => {
     expect(await boxStock()).toBe(144);
     await cancelOrder(order.id, admin); // idempotentní
     expect(await boxStock()).toBe(144);
+  });
+
+  it("zrušení z administrace: e-mail zákazníkovi jen se zaškrtnutím, jednou; u zaplacené s vrácením peněz", async () => {
+    const quiet = await createOrder(checkout(), null);
+    sentMailLog.length = 0;
+    await changeStatus(quiet.id, "CANCELLED", admin, undefined, { notifyCustomer: false });
+    expect(sentMailLog).toHaveLength(0);
+
+    const paid = await createOrder(checkout({ customer: { firstName: "P", lastName: "Q", email: "p@example.com", phone: "777123456" } }), null);
+    await markPaid(paid.id, admin);
+    sentMailLog.length = 0;
+    await changeStatus(paid.id, "CANCELLED", admin, undefined, { notifyCustomer: true });
+    await changeStatus(paid.id, "CANCELLED", admin, undefined, { notifyCustomer: true }); // už zrušená – nic
+    const mails = sentMailLog.filter((m) => m.to === "p@example.com");
+    expect(mails).toHaveLength(1);
+    expect(mails[0].subject).toContain("byla zrušena");
+
+    const full = await prisma.order.findUniqueOrThrow({ where: { id: paid.id }, include: { items: true } });
+    expect(full.verifyToken).toBeNull();
+    expect(cancelledMail(full, await getSettings(), { wasPaid: true }).text).toContain("vrátíme");
+    expect(cancelledMail(full, await getSettings(), { wasPaid: false }).text).toContain("ozvěte se nám");
   });
 
   it("nezaplacená GoPay objednávka se po hodině převede na převod / QR: zákazník platební údaje, ověřovatel e-mail", async () => {

@@ -147,6 +147,10 @@ export function StatusActions(props: {
               {props.status === "PAID" && " Peníze je nutné vrátit ručně (GoPay / převodem)."}
             </span>
           </label>
+          <label className="mt-2 flex items-start gap-2 text-sm text-muted">
+            <input type="checkbox" name="notifyCustomer" defaultChecked className="mt-1" />
+            <span>Poslat zákazníkovi e-mail o zrušení</span>
+          </label>
           <button
             disabled={pending || !confirmCancel}
             className="mt-2 w-full border border-danger/70 px-4 py-2 text-sm text-danger disabled:opacity-40"

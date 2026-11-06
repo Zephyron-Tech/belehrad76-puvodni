@@ -59,6 +59,7 @@ export async function changeStatusAction(_: ActionState, form: FormData): Promis
       to,
       { source: "admin", actor, ip },
       { carrier: String(form.get("carrier") ?? ""), trackingNumber: String(form.get("trackingNumber") ?? "") },
+      { notifyCustomer: form.get("notifyCustomer") === "on" },
     );
   } catch (err) {
     if (err instanceof AppError) return { error: err.message };
