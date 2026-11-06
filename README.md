@@ -68,7 +68,7 @@ Nejdůležitější klíče v `Setting` (úplný seznam s popisy: [`src/config/d
 | `pickup.enabled`, `pickup.address`, `pickup.note` | | Osobní převzetí na FAČR |
 | `bottle.lead_time` | | Text o dodací lhůtě kusovek (8 dní) |
 | `box.delivery` | | Text o doručení boxu (kurýr, 8 dní) |
-| `reservation.gopay_minutes` | 30 | Jak dlouho se drží box při platbě přes GoPay (převody se automaticky neruší) |
+| `reservation.gopay_minutes` | 60 | Po kolika minutách se nezaplacená GoPay objednávka převede na převod / QR (nic se automaticky neruší) |
 | `order.max_boxes` / `order.max_bottles` | 10 / 50 | Limit na objednávku |
 | `payment.bank_transfer` | `true` | Platba převodem / QR kódem v pokladně (`false` = jen GoPay) |
 | `payment.verify_email` | rychlikjan52@gmail.com | Ověřovatel plateb převodem (ověřovací e-mail s odkazy) |
@@ -126,7 +126,9 @@ Stavy: **Přijatá (čeká na platbu) → Zaplacená → Odeslaná / Připraven�
 4. **Zaplaceno** = objednávka zaplacená (potvrzení s PDF zákazníkovi). **Upomínka** = e-mail zákazníkovi s QR
    (po „vyřeším sám“ jde upomínka poslat z administrace),
    ověřování běží dál. **Vyřeším sám** = připomínání skončí, objednávka čeká a řeší ji admin.
-5. Objednávky převodem se **automaticky neruší**; zrušení (uvolnění boxu) jen admin v administraci. Zákazník přesto
+5. **Nezaplacená GoPay objednávka** se po 60 minutách převede na převod / QR: zákazník dostane platební údaje
+   („Objednávka zatím není zaplacena“), ověřovatel ověřovací e-mail; pozdní platba v GoPay ji zaplatí i tak.
+6. Objednávky převodem se **automaticky neruší**; zrušení (uvolnění boxu) jen admin v administraci. Zákazník přesto
    všude vidí „Pokud platbu neobdržíme do 7 dní (do …), objednávku zrušíme.“ – jen informace (`reservation.transfer_days`).
   Pozdě došlou platbu lze označit i u zrušené objednávky (box se znovu odečte, pokud je skladem).
 - **Odesláno:** zadat dopravce a číslo zásilky → zákazníkovi odejde e-mail. U osobního převzetí e-mail „připraveno k převzetí“.

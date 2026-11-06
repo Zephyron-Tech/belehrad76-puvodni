@@ -176,13 +176,27 @@ describe("objednávky a sklad", () => {
     expect(await boxStock()).toBe(144);
   });
 
-  it("po vypršení rezervace se nezaplacená objednávka (GoPay) zruší a box se uvolní", async () => {
+  it("nezaplacená GoPay objednávka se po hodině převede na převod / QR: zákazník platební údaje, ověřovatel e-mail", async () => {
     const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
     expect(await boxStock()).toBe(143);
-    const cancelled = await expireStaleOrders(new Date(Date.now() + 60 * 60_000));
-    expect(cancelled).toBe(1);
-    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("CANCELLED");
-    expect(await boxStock()).toBe(144);
+    expect(await expireStaleOrders(new Date(Date.now() + 59 * 60_000))).toBe(0);
+    sentMailLog.length = 0;
+    expect(await expireStaleOrders(new Date(Date.now() + 61 * 60_000))).toBe(1);
+
+    const after = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(after.status).toBe("PENDING");
+    expect(after.paymentMethod).toBe("BANK_TRANSFER");
+    expect(after.verifyState).toBe("WAITING");
+    expect(after.reservedUntil).toBeNull();
+    expect(await boxStock()).toBe(143); // box zůstává rezervovaný
+
+    const customer = sentMailLog.filter((m) => m.to === "jan@example.com");
+    expect(customer).toHaveLength(1);
+    expect(customer[0].subject).toContain("zatím není zaplacena");
+    expect(customer[0].attachments).toContain("qr-platba.png");
+    expect(sentMailLog.filter((m) => m.subject.includes("Ověřte platbu"))).toHaveLength(1);
+    // podruhé se nic neposílá
+    expect(await expireStaleOrders(new Date(Date.now() + 120 * 60_000))).toBe(0);
   });
 
   it("pozdě došlý převod: zrušenou objednávku lze označit jako zaplacenou, box se znovu odečte", async () => {
@@ -227,7 +241,7 @@ describe("GoPay (simulace)", () => {
     expect(await boxStock()).toBe(143);
   });
 
-  it("zrušená platba nechá objednávku čekat; po vypršení se ověří a zruší", async () => {
+  it("zrušená platba nechá objednávku čekat; po hodině se ověří a převede na převod / QR", async () => {
     const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
     await startGopayPayment(order.id);
     const payment = await prisma.payment.findFirstOrThrow({ where: { orderId: order.id } });
@@ -235,17 +249,33 @@ describe("GoPay (simulace)", () => {
     await syncGopayPayment(payment.gopayId);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("PENDING");
 
-    await expireStaleOrders(new Date(Date.now() + 31 * 60_000));
-    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("CANCELLED");
-    expect(await boxStock()).toBe(144);
+    await expireStaleOrders(new Date(Date.now() + 61 * 60_000));
+    const after = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(after.status).toBe("PENDING");
+    expect(after.paymentMethod).toBe("BANK_TRANSFER");
+    expect(await boxStock()).toBe(143);
+  });
+
+  it("pozdě dokončená platba v GoPay po převodu na QR objednávku zaplatí", async () => {
+    const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
+    await startGopayPayment(order.id);
+    await expireStaleOrders(new Date(Date.now() + 61 * 60_000));
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).paymentMethod).toBe("BANK_TRANSFER");
+
+    await prisma.payment.updateMany({ where: { orderId: order.id }, data: { state: "PAID" } });
+    const payment = await prisma.payment.findFirstOrThrow({ where: { orderId: order.id } });
+    await syncGopayPayment(payment.gopayId);
+    const paid = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(paid.status).toBe("PAID");
+    expect(paid.verifyState).toBeNull();
   });
 
   it("platba dokončená těsně před vypršením se při expiraci ověří a objednávka se nezruší", async () => {
     const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
     await startGopayPayment(order.id);
     await prisma.payment.updateMany({ where: { orderId: order.id }, data: { state: "PAID" } });
-    const cancelled = await expireStaleOrders(new Date(Date.now() + 31 * 60_000));
-    expect(cancelled).toBe(0);
+    const switched = await expireStaleOrders(new Date(Date.now() + 61 * 60_000));
+    expect(switched).toBe(0);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("PAID");
   });
 

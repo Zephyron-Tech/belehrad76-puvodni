@@ -18,7 +18,7 @@ import { getSettings } from "../settings";
 import { audit, type ActionContext } from "../audit";
 import { AppError } from "../errors";
 import { sendMail } from "../mail/transport";
-import { paymentReminderMail, verifyPaymentMail } from "../mail/templates";
+import { paymentReminderMail, transferSwitchMail, verifyPaymentMail } from "../mail/templates";
 import { qrPng, transferInstructions } from "../bank";
 import { markPaid } from "./transitions";
 import { customerReplyTo } from "./notifications";
@@ -215,4 +215,38 @@ export async function resolveVerification(
   }
   await audit({ action: "payment_reminder", orderId: order.id, detail: `upomínka č. ${order.reminderCount + 1}` }, ctx);
   return { done: true, action };
+}
+
+/**
+ * Nezaplacená GoPay objednávka po lhůtě (reservation.gopay_minutes) přechází na platbu převodem / QR kódem:
+ * zákazník dostane platební údaje s informací, že objednávka zatím není zaplacena, a ověřovatel hned ověřovací e-mail.
+ * Box zůstává rezervovaný; pozdě dokončená platba v GoPay objednávku zaplatí i tak (notifikace GoPay).
+ * Volající má předem ověřit stav platby v GoPay. Vrací true, když objednávku přepnul.
+ */
+export async function switchGopayToTransfer(orderId: number, now = new Date()): Promise<boolean> {
+  const switched = await prisma.order.updateMany({
+    where: { id: orderId, status: "PENDING", paymentMethod: "GOPAY" },
+    data: { paymentMethod: "BANK_TRANSFER", reservedUntil: null, verifyState: "WAITING", stateChangedAt: now },
+  });
+  if (switched.count !== 1) return false;
+  await audit({ action: "gopay_switched_to_transfer", orderId }, { source: "system" });
+
+  const order = await loadOrder({ id: orderId });
+  if (!order) return true;
+  try {
+    const settings = await getSettings();
+    const transfer = transferInstructions(settings.str("bank.account"), order.totalCzk, order.number, settings.str("seller.name"));
+    const mail = transferSwitchMail(order, settings, { orderUrl: orderUrl(order.publicToken), transfer, qrCid: "qr-platba" });
+    await sendMail({
+      to: order.email,
+      ...mail,
+      attachments: [{ filename: "qr-platba.png", content: await qrPng(transfer.spd), cid: "qr-platba" }],
+      replyTo: customerReplyTo(settings),
+    });
+  } catch (err) {
+    console.error("[verify] switch mail failed", orderId, err);
+  }
+  // ověřovatel ve stejnou chvíli; při chybě ho dorovná opakování (resendPendingVerifications)
+  await sendVerifyMail(orderId, { now }).catch((err) => console.error("[verify] verify mail failed", orderId, err));
+  return true;
 }

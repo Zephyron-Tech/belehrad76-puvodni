@@ -77,7 +77,11 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
   },
   { key: "order.max_boxes", value: "10", description: "Max. počet boxů v jedné objednávce" },
   { key: "order.max_bottles", value: "50", description: "Max. počet kusovek v jedné objednávce" },
-  { key: "reservation.gopay_minutes", value: "30", description: "Jak dlouho se drží box při platbě přes GoPay (minuty)" },
+  {
+    key: "reservation.gopay_minutes",
+    value: "60",
+    description: "Platba přes GoPay: po kolika minutách bez zaplacení se objednávka převede na platbu převodem / QR kódem (zákazníkovi platební údaje, ověřovateli ověřovací e-mail)",
+  },
   {
     key: "reservation.transfer_days",
     value: "7",

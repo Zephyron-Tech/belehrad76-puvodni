@@ -302,7 +302,7 @@ export function CheckoutForm(props: Props) {
               <span>
                 <span className="block font-semibold">Online kartou nebo bankovním převodem</span>
                 <span className="block text-sm text-muted">
-                  Platební brána GoPay (karta, Apple Pay, Google Pay, rychlý převod). Zboží držíme {props.gopayMinutes} minut.
+                  Platební brána GoPay (karta, Apple Pay, Google Pay, rychlý převod). Pokud platbu v bráně nedokončíte do {props.gopayMinutes} minut, zašleme vám platební údaje pro převod / QR kód.
                 </span>
               </span>
             </label>

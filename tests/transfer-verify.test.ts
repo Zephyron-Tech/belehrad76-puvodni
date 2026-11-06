@@ -92,16 +92,20 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     expect(await resolveVerification({ verifyToken: fresh.verifyToken! }, "paid", verifier)).toEqual({ done: true, action: "paid" });
   });
 
-  it("e-mail „Objednávka přijata“ u platby přes bránu upozorní, ať zákazník už neplatí", async () => {
-    const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
-    const full = await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
-    const mail = orderReceivedMail(full, await getSettings(), { orderUrl: "https://x" });
-    expect(mail.html).toContain("nic dalšího neplaťte");
-    expect(mail.text).toContain("nic dalšího neplaťte");
-    // u převodu ne
+  it("„Objednávka přijata“: GoPay bez platebních údajů a upozornění, převod s upozorněním „už neplaťte“", async () => {
+    const gopay = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
+    const g = await prisma.order.findUniqueOrThrow({ where: { id: gopay.id }, include: { items: true } });
+    const gm = orderReceivedMail(g, await getSettings(), { orderUrl: "https://x" });
+    expect(gm.html).not.toContain("nic dalšího neplaťte");
+    expect(gm.html).not.toContain("Čeká na úhradu");
+    expect(gm.html).not.toContain("Variabilní symbol");
+    expect(gm.html).toContain("Děkujeme za objednávku");
+
     const transfer = await transferOrder();
     const t = await prisma.order.findUniqueOrThrow({ where: { id: transfer.id }, include: { items: true } });
-    expect(orderReceivedMail(t, await getSettings(), { orderUrl: "https://x" }).html).not.toContain("nic dalšího neplaťte");
+    const tm = orderReceivedMail(t, await getSettings(), { orderUrl: "https://x" });
+    expect(tm.html).toContain("Pokud jste již zaplatili QR kódem nebo převodem ze stránky objednávky");
+    expect(tm.text).toContain("nic dalšího neplaťte");
   });
 
   it("Zaplaceno: objednávka zaplacená, zákazník potvrzení s PDF, ověřování končí", async () => {

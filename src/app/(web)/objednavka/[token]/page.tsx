@@ -26,8 +26,8 @@ export default async function OrderPage({ params, searchParams }: Props) {
   let order = await prisma.order.findUnique({ where: { publicToken: token }, include: { items: true } });
   if (!order) notFound();
 
-  // Návrat z platební brány: stav ověříme přímo v GoPay
-  if (platba === "navrat" && order.status === "PENDING" && order.paymentMethod === "GOPAY") {
+  // Návrat z platební brány: stav ověříme přímo v GoPay (i u objednávky už převedené na převod / QR)
+  if (platba === "navrat" && order.status === "PENDING") {
     await syncOrderPayments(order.id);
     order = await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
   }
@@ -75,11 +75,14 @@ export default async function OrderPage({ params, searchParams }: Props) {
             <p className="mt-4 text-warn">Platební bránu se nepodařilo otevřít. Objednávka je uložena, zkuste platbu spustit znovu.</p>
           )}
           {expired ? (
-            <p className="mt-4 text-cream/85">Čas na zaplacení vypršel. Objednávka bude zrušena.</p>
+            <p className="mt-4 text-cream/85">Platbu v bráně jsme neobdrželi. Za okamžik vám zašleme platební údaje pro převod / QR kód.</p>
           ) : (
             <div className="mt-6 max-w-sm">
               <PayButton token={order.publicToken} />
-              <p className="mt-2 text-sm text-muted">Zboží pro vás držíme do {formatDateTime(order.reservedUntil)}.</p>
+              <p className="mt-2 text-sm text-muted">
+                Pokud platbu v bráně nedokončíte do {formatDateTime(order.reservedUntil)}, zašleme vám platební údaje pro
+                převod / QR kód.
+              </p>
             </div>
           )}
         </>

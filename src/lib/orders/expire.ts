@@ -1,13 +1,13 @@
 import { prisma } from "../db";
-import { cancelOrder } from "./transitions";
 import { syncOrderPayments } from "./payments";
 import { sendPaidNotifications } from "./notifications";
-import { resendPendingVerifications } from "./transfer-verify";
+import { resendPendingVerifications, switchGopayToTransfer } from "./transfer-verify";
 
 /**
- * Zruší nezaplacené objednávky přes GoPay po vypršení rezervace a vrátí boxy na sklad
- * (před zrušením se ještě ověří stav platby v GoPay). Objednávky převodem se automaticky neruší –
- * čekají na ověřovatele, zrušit je může jen admin (SPECIFIKACE 5b).
+ * Nezaplacené objednávky přes GoPay po lhůtě (reservation.gopay_minutes, 60 min) převede na platbu převodem / QR
+ * kódem – zákazník dostane platební údaje, ověřovatel ověřovací e-mail (SPECIFIKACE 5b). Před převodem se ještě
+ * ověří stav platby v GoPay. Objednávky se automaticky neruší – zrušit je může jen admin.
+ * Vrací počet převedených objednávek.
  */
 export async function expireStaleOrders(now = new Date()): Promise<number> {
   const stale = await prisma.order.findMany({
@@ -16,17 +16,16 @@ export async function expireStaleOrders(now = new Date()): Promise<number> {
     take: 200,
   });
 
-  let cancelled = 0;
+  let switched = 0;
   for (const order of stale) {
     if (order.paymentMethod === "GOPAY") {
       await syncOrderPayments(order.id);
       const current = await prisma.order.findUnique({ where: { id: order.id }, select: { status: true } });
       if (current?.status !== "PENDING") continue;
     }
-    await cancelOrder(order.id, { source: "system" }, "Nezaplaceno včas – rezervace vypršela");
-    cancelled++;
+    if (await switchGopayToTransfer(order.id, now)) switched++;
   }
-  return cancelled;
+  return switched;
 }
 
 /**

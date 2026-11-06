@@ -70,7 +70,7 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
 
 ### 4.2 Košík a objednávka
 - Košík: box a/nebo kusovky, počet ks, kontrola skladu v reálném čase.
-- Rezervace skladu na čas platby (např. 30 min), po vypršení se sklad uvolní.
+- Rezervace skladu po dobu platby. Nezaplacená objednávka se automaticky neruší – u GoPay se po 60 minutách převede na platbu převodem / QR (viz 5b).
 - Checkout bez účtu: jméno, e-mail, telefon, doručovací adresa nebo výdejní místo, fakturační údaje (volitelně IČO/DIČ), poznámka.
 - Povinné souhlasy: obchodní podmínky, 18+, ochrana osobních údajů. Souhlas s marketingem je volitelný.
 - Zaškrtávací pole „Chci se zúčastnit losování o vstup na večer 30. 11.“ (viz 4.5). Zobrazí se jen u košíku s boxem. Vstup pouze pro 1 osobu na 1 zakoupený box, jméno doprovodu se nesbírá.
@@ -84,7 +84,7 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
 
 ### 4.3 Po objednávce
 - **Platba proběhla**: stav „zaplaceno“, odečtení skladu, e-mail s potvrzením platby a PDF s informací o zaplacení (objednávka, částka, způsob platby, prodávající, datum). Potvrzení platby se generuje až po úspěšné platbě. Žádná faktura se negeneruje.
-- Okamžitě po vytvoření objednávky přijde krátký e-mail „objednávka přijata“ s údaji k platbě (u převodu s QR kódem, viz 5b). U platby přes platební bránu obsahuje zvýrazněné upozornění: „Pokud jste již zaplatili prostřednictvím platební brány na našem webu, nic dalšího neplaťte – potvrzení o přijetí platby vám zašleme samostatně.“ (Oba e-maily mohou přijít téměř současně.)
+- Okamžitě po vytvoření objednávky přijde e-mail „objednávka přijata“. **GoPay:** bez platebních údajů, podtitulek „Děkujeme za objednávku“ (platí se v bráně, potvrzení platby přijde zvlášť). **Převod:** platební údaje s QR kódem a zvýrazněné upozornění „Pokud jste již zaplatili QR kódem nebo převodem ze stránky objednávky na našem webu, nic dalšího neplaťte – potvrzení vám zašleme, jakmile platbu přijmeme.“ (viz 5b).
 - Provozovatel (Petite Eiffel) dostane e-mail s kompletními údaji o každé zaplacené objednávce (zboží, doprava, adresa nebo osobní převzetí, kontakt, zájem o večer). Podle toho zásilky vyřizuje.
 - E-mail o odeslání zásilky (s dopravcem a číslem zásilky) se posílá automaticky při přepnutí objednávky na „odeslaná“ v administraci (viz 4.4).
 
@@ -152,7 +152,12 @@ v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
 6. **Upomínka zákazníkovi:** platba zatím nedorazila, platební údaje a QR kód, **bez splatnosti**. Po upomínce začne ověřování znovu (další ověřovací e-mail za 24 hodin).
 7. **Objednávky převodem se automaticky neruší.** Box zůstává rezervovaný, dokud objednávka není zaplacená,
    nebo ji **přihlášený admin** v administraci nezruší (zrušení uvolní box). Úplné zamítnutí (zrušení) jde jen
-   s přihlášením. Objednávky přes GoPay se po vypršení rezervace ruší jako dosud.
+   s přihlášením.
+   **Nezaplacená GoPay objednávka** se po 60 minutách (`reservation.gopay_minutes`) – po ověření stavu v GoPay –
+   **převede na platbu převodem / QR**: zákazník dostane e-mail „Objednávka zatím není zaplacena“ s platebními údaji,
+   QR kódem a upozorněním „Pokud jste již zaplatili v platební bráně, QR kódem nebo převodem…, nic dalšího neplaťte“,
+   ověřovatel ve stejnou chvíli ověřovací e-mail. Dál běží tok převodu (body 4–8). Pozdě dokončená platba v GoPay
+   objednávku zaplatí automaticky.
    Zákazníkovi se přesto u platby převodem všude (pokladna, stránka objednávky, e-mail „Objednávka přijata“,
    upomínka) uvádí „Pokud platbu neobdržíme do 7 dní (do datum), objednávku zrušíme.“ – **jen informace**,
    automaticky se nic neruší. Po upomínce se 7 dní počítá od upomínky (`reservation.transfer_days`).

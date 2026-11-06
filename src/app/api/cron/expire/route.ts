@@ -5,7 +5,7 @@ import { expireStaleOrders, retryPaidNotifications } from "@/lib/orders/expire";
 import { resendPendingVerifications } from "@/lib/orders/transfer-verify";
 
 /**
- * Zrušení nezaplacených objednávek (GoPay) po vypršení rezervace, dorovnání neodeslaných e-mailů po zaplacení
+ * Převod nezaplacených GoPay objednávek na platbu převodem / QR po lhůtě, dorovnání neodeslaných e-mailů po zaplacení
  * a opakování ověřovacích e-mailů plateb převodem (každých 24 h).
  * Volat pravidelně (např. každých 5 minut) s hlavičkou: Authorization: Bearer <CRON_SECRET>
  */
@@ -18,10 +18,10 @@ async function handle(req: Request) {
     crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected));
   if (!ok) return new NextResponse("Unauthorized", { status: 401 });
 
-  const cancelled = await expireStaleOrders();
+  const switchedToTransfer = await expireStaleOrders();
   const notified = await retryPaidNotifications();
   const verifyMails = await resendPendingVerifications();
-  return NextResponse.json({ cancelled, notified, verifyMails });
+  return NextResponse.json({ switchedToTransfer, notified, verifyMails });
 }
 
 export const GET = handle;

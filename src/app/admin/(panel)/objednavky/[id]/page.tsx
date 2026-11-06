@@ -23,6 +23,7 @@ const ACTION_LABEL: Record<string, string> = {
   payment_claimed: "Zákazník: „Zaplatil jsem“",
   verify_manual: "Platba převodem: nezaplaceno – vyřeší admin",
   payment_reminder: "Upomínka platby odeslána zákazníkovi",
+  gopay_switched_to_transfer: "Nezaplaceno v bráně – převedeno na platbu převodem / QR",
 };
 const SOURCE_LABEL: Record<string, string> = {
   system: "systém",

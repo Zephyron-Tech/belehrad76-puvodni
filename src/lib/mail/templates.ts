@@ -85,6 +85,12 @@ function button(href: string, label: string): string {
 </td></tr>`;
 }
 
+/** Upozornění u platby převodem / QR: ať zákazník neplatí dvakrát. */
+const ALREADY_PAID_TRANSFER =
+  "Pokud jste již zaplatili QR kódem nebo převodem ze stránky objednávky na našem webu, nic dalšího neplaťte – potvrzení vám zašleme, jakmile platbu přijmeme.";
+const ALREADY_PAID_SWITCHED =
+  "Pokud jste již zaplatili v platební bráně, QR kódem nebo převodem ze stránky objednávky, nic dalšího neplaťte – potvrzení vám zašleme, jakmile platbu přijmeme.";
+
 /** Zvýrazněné sdělení: zlatá linka vlevo, světlejší podklad. */
 function notice(html: string): string {
   return `<tr><td style="padding:24px 40px 0;">
@@ -250,11 +256,10 @@ export function orderReceivedMail(
   let payment = "";
   let paymentText = "";
 
-  // E-mail odchází hned po objednávce – u platby kartou mohl zákazník mezitím zaplatit v bráně (potvrzení platby
-  // přijde zvlášť, často skoro současně). Ať neplatí podruhé.
-  const gopayPaidText =
-    "Pokud jste již zaplatili prostřednictvím platební brány na našem webu, nic dalšího neplaťte – potvrzení o přijetí platby vám zašleme samostatně.";
-  const gopayPaid = order.paymentMethod === "GOPAY" ? notice(`<strong style="color:${C.goldLight};">Důležité:</strong> ${esc(gopayPaidText)}`) : "";
+  // GoPay: bez platebních údajů (platí se v bráně, potvrzení přijde zvlášť). Převod: platební údaje + upozornění.
+  const isTransfer = order.paymentMethod === "BANK_TRANSFER";
+  const sub = isTransfer ? "Čeká na úhradu" : "Děkujeme za objednávku";
+  const alreadyPaid = isTransfer ? notice(`<strong style="color:${C.goldLight};">Důležité:</strong> ${esc(ALREADY_PAID_TRANSFER)}`) : "";
 
   if (order.paymentMethod === "BANK_TRANSFER" && opts.transfer) {
     payment = transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: order.createdAt });
@@ -264,10 +269,10 @@ export function orderReceivedMail(
   const html = layout(
     settings,
     title,
-    `${statusBlock("pending", "Objednávka přijata", "Čeká na úhradu")}
+    `${statusBlock("pending", "Objednávka přijata", sub)}
 ${para(`Objednávka č. <span style="color:${C.goldLight};">${esc(order.number)}</span> · ${esc(formatDateTime(order.createdAt))}`, { muted: true, center: true })}
 ${para("Děkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.", { center: true })}
-${gopayPaid}
+${alreadyPaid}
 ${sectionTitle("Objednávka")}
 ${itemsTable(order)}
 ${payment}
@@ -275,10 +280,10 @@ ${deliveryBlock(order, settings)}
 ${notesBlock(order, settings)}
 ${order.eveningInterest ? para(`Po zaplacení vás zařadíme do losování o vstup na galavečer ${esc(settings.str("evening.date"))}. ${esc(EVENING_ENTRY_NOTE)}`, { muted: true }) : ""}
 `,
-    `Čeká na úhradu ${formatCzk(order.totalCzk)}.`,
+    isTransfer ? `Čeká na úhradu ${formatCzk(order.totalCzk)}.` : `Objednávka ${order.number} přijata.`,
   );
 
-  const text = `OBJEDNÁVKA PŘIJATA – ČEKÁ NA ÚHRADU\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\n${order.paymentMethod === "GOPAY" ? `\nDŮLEŽITÉ: ${gopayPaidText}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `OBJEDNÁVKA PŘIJATA${isTransfer ? " – ČEKÁ NA ÚHRADU" : ""}\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\n${isTransfer ? `\nDŮLEŽITÉ: ${ALREADY_PAID_TRANSFER}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -504,5 +509,31 @@ ${deliveryBlock(order, settings)}`,
     `Čekáme na platbu ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
   const text = `PŘIPOMÍNKA PLATBY\nObjednávka č. ${order.number}\n\nDovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, považujte prosím tuto zprávu za bezpředmětnou.\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
+  return { subject: title, html, text };
+}
+
+/**
+ * Nezaplacená GoPay objednávka po lhůtě (reservation.gopay_minutes) přechází na platbu převodem / QR kódem
+ * (SPECIFIKACE 5b): zákazníkovi platební údaje s informací, že objednávka zatím není zaplacena.
+ */
+export function transferSwitchMail(
+  order: OrderWithItems,
+  settings: Settings,
+  opts: { orderUrl: string; transfer: TransferInstructions; qrCid?: string },
+) {
+  const title = `Objednávka ${order.number} zatím není zaplacena`;
+  const html = layout(
+    settings,
+    title,
+    `${statusBlock("pending", "Objednávka zatím není zaplacena", `Objednávka č. ${order.number}`)}
+${para("Platbu v platební bráně jsme od vás neobdrželi. Objednávku můžete dokončit bankovním převodem – stačí naskenovat QR kód v aplikaci své banky.", { center: true })}
+${notice(`<strong style="color:${C.goldLight};">Důležité:</strong> ${esc(ALREADY_PAID_SWITCHED)}`)}
+${transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: new Date() })}
+${sectionTitle("Objednávka")}
+${itemsTable(order)}
+${deliveryBlock(order, settings)}`,
+    `Platba za objednávku ${order.number} zatím nedorazila – platební údaje uvnitř.`,
+  );
+  const text = `OBJEDNÁVKA ZATÍM NENÍ ZAPLACENA\nObjednávka č. ${order.number}\n\nPlatbu v platební bráně jsme od vás neobdrželi. Objednávku můžete dokončit bankovním převodem – stačí naskenovat QR kód v aplikaci své banky.\n\nDŮLEŽITÉ: ${ALREADY_PAID_SWITCHED}\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
   return { subject: title, html, text };
 }
