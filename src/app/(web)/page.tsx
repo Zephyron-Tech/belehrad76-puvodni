@@ -40,7 +40,15 @@ export default async function HomePage() {
             <p className="mt-3 font-serif text-2xl tracking-[0.35em] text-cream sm:text-3xl">
               {settings.str("home.hero_subtitle").toUpperCase()}
             </p>
-            <p className="mt-6 max-w-xl text-lg text-cream/85">{settings.text("home.hero_lead")}</p>
+            {settings
+              .text("home.hero_lead")
+              .split("\n")
+              .filter((line) => line.trim())
+              .map((line, i) => (
+                <p key={i} className={`${i === 0 ? "mt-6" : "mt-3"} max-w-xl text-lg text-cream/85`}>
+                  {line}
+                </p>
+              ))}
             <div className="mt-8 flex flex-wrap items-center gap-3">
               {box && (
                 <Link
@@ -106,7 +114,18 @@ export default async function HomePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Limitovaná edice</p>
               <h2 className="mt-2 font-serif text-3xl font-bold text-cream sm:text-4xl">{box.name}</h2>
               <p className="mt-4 text-cream/85">{box.shortDescription}</p>
-              <p className="mt-6 font-serif text-4xl font-bold text-gold-light">{formatCzk(box.priceCzk)}</p>
+              <p className="mt-6 font-serif text-4xl font-bold text-gold-light">
+                {bottles.length > 0 && (
+                  <span className="mr-2 align-middle font-sans text-base font-normal text-muted">
+                    {bottles.length} × {formatCzk(bottles[0].priceCzk)} =
+                  </span>
+                )}
+                {formatCzk(box.priceCzk)}
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Doprava {formatCzk(settings.num("shipping.box_czk"))} za celou objednávku. Osobní převzetí v{"\u00a0"}sídle FAČR
+                v{"\u00a0"}Praze zdarma.
+              </p>
               <div className="mt-3">
                 <StockBadge stock={box.stock} />
               </div>
@@ -131,10 +150,10 @@ export default async function HomePage() {
       <section id="hraci" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="font-serif text-3xl font-bold text-gold sm:text-4xl">13 mistrů, 13 lahví</h2>
+            <h2 className="font-serif text-3xl font-bold text-gold sm:text-4xl">Soupiska finále: 13{"\u00a0"}hráčů, 13{"\u00a0"}lahví</h2>
             <p className="mt-2 max-w-2xl text-cream/80">
-              Každý z hráčů má vlastní lahev s portrétem, jménem a číslem dresu. Koupit je můžete v boxu, nebo jednotlivě –
-              třeba lahev svého oblíbence.
+              Každý hráč finále má vlastní lahev. V{"\u00a0"}boxu je všech 13, lahev svého oblíbeného hráče můžete koupit
+              i{"\u00a0"}samostatně za {formatCzk(bottles[0]?.priceCzk ?? 760)}.
             </p>
           </div>
           <Link href="/eshop#lahve" className="text-sm text-gold-light underline underline-offset-4">

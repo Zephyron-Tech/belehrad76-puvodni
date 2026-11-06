@@ -20,7 +20,7 @@ async function main() {
       slug: "box-mistri-evropy",
       type: ProductType.BOX,
       name: "Box Mistři Evropy",
-      shortDescription: "13 lahví slivovice 50 %, jedna za každého hráče. Limitovaná edice 152 boxů.",
+      shortDescription: "Všech 13 hráčů finále v jednom číslovaném boxu. V každé lahvi 0,35l 50% Slivovice. Limitovaná edice 152 boxů.",
       description: [
         "Sběratelský box limitované edice **Mistři Evropy – Bělehrad 1976**.",
         "",

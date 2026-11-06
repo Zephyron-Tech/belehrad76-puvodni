@@ -40,10 +40,17 @@ export default async function EshopPage() {
               <h2 className="font-serif text-3xl font-bold text-cream">{box.name}</h2>
             </div>
             <p className="mt-3 text-cream/85">{box.shortDescription}</p>
-            <p className="mt-5 font-serif text-4xl font-bold text-gold-light">{formatCzk(box.priceCzk)}</p>
+            <p className="mt-5 font-serif text-4xl font-bold text-gold-light">
+              {bottles.length > 0 && (
+                <span className="mr-2 align-middle font-sans text-base font-normal text-muted">
+                  {bottles.length} × {formatCzk(bottles[0].priceCzk)} =
+                </span>
+              )}
+              {formatCzk(box.priceCzk)}
+            </p>
             <p className="mt-1 text-sm text-muted">
-              Doprava {formatCzk(settings.num("shipping.box_czk"))} za celou objednávku, ať objednáte jeden box, nebo více –
-              i s lahvemi navíc. Osobní převzetí na FAČR je zdarma.
+              Doprava {formatCzk(settings.num("shipping.box_czk"))} za celou objednávku. Osobní převzetí v{"\u00a0"}sídle FAČR
+              v{"\u00a0"}Praze zdarma.
             </p>
             <p className="mt-1 text-sm text-muted">{settings.text("box.delivery")}</p>
             <div className="mt-4">

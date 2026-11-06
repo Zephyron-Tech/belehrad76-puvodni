@@ -19,31 +19,31 @@ export const DEFAULT_PAGES: { slug: string; title: string; body: string; publish
     slug: "pribeh",
     title: "Příběh edice",
     published: false,
-    body: `20\\. června 1976 se na stadionu Crvene zvezdy v Bělehradě psala historie. Českoslovenští fotbalisté ve finále mistrovství Evropy porazili po prodloužení a penaltovém rozstřelu tým Západního Německa. Rozhodující penaltu proměnil Antonín Panenka – a jeho jemný „dloubák“ zná dodnes celý fotbalový svět.
+    body: `V roce 1976 se českoslovenští fotbalisté stali mistry Evropy. Jejich bělehradský triumf, korunovaný nezapomenutelným dloubákem Antonína Panenky, patří k největším okamžikům naší sportovní historie.
 
-K 50. výročí tohoto vítězství vzniká limitovaná edice **Mistři Evropy – Bělehrad 1976**: speciální slivovice 50 % ve 152 sběratelských boxech. Každý box ukrývá 13 lahví – jednu za každého hráče. Etiketa nese jeho portrét, jméno a číslo dresu.
+K padesátému výročí tohoto slavného vítězství vznikla pod vedením mistra palírníka Vlastislava Veselého z Vigantic speciální **50% slivovice**. Spolu s portréty fotbalových legend a reprezentativním boxem vytvářejí jedinečnou kolekci pro sběratele, fotbalové příznivce i jako výjimečný dárek.
 
-**152 boxů × 13 lahví = 1 976 lahví.** Ani to číslo není náhoda.`,
+**152 boxů. 13 hráčů. 1976 lahví.**`,
   },
   {
     slug: "nadace",
-    title: "Výtěžek pro Nadaci fotbalových internacionálů",
+    title: "Výtěžek pro internacionály",
     published: false,
-    body: `Výtěžek edice jde na podporu **Nadace fotbalových internacionálů**, která pomáhá bývalým reprezentantům a jejich rodinám v těžkých životních situacích. Každou lahví tak přispíváte těm, kteří reprezentovali československý fotbal.`,
+    body: `Každým nákupem podpoříte ty, kteří kdysi oblékali reprezentační dres. Z každé prodané lahve jde 100 Kč Nadaci fotbalových internacionálů, která pomáhá bývalým reprezentantům a jejich rodinám, když to potřebují. Dříve hráli za nás, teď můžeme něco vrátit my jim.`,
   },
   {
     slug: "vecer",
-    title: "Slavnostní večer 30. 11. 2026",
+    title: "Galavečer 30. 11. 2026",
     published: false,
-    body: `Edici slavnostně představíme **30. listopadu 2026** na galavečeru, který bude moderovat **Jakub Kohák**. Pozvání přijali čtyři čeští a čtyři slovenští hráči.
+    body: `Edici představíme na galavečeru s hráči vítězného týmu. Začínáme ve 20:15 v salonku Trezor restaurace Červený Jelen v Praze, večerem provede Jakub Kohák. Pozvání přijalo 8 hráčů finálového utkání, Ivo Viktor, Karol Dobiáš, Antonín Panenka, Zdeněk Nehoda, Jozef Čapkovič, Ján Pivarník, Laco Jurkemik a Ján Švehlík.
 
-Kdo si v předprodeji objedná box, může se zapojit do **losování o vstup na večer** – stačí při objednávce zaškrtnout zájem o účast. Vstup pouze pro 1 osobu na 1 zakoupený box. Podrobnosti losování včas zveřejníme.`,
+Objednejte si box v předprodeji a při objednávce zaškrtněte zájem o účast. Zařadíme vás do losování o vstup na galavečer. Každý jeden zakoupený box dává šanci na vstup pro jednu osobu. Výsledky losování oznámíme do 25.11.2026.`,
   },
   {
     slug: "drazba",
     title: "Dražba na galavečeru",
     published: false,
-    body: `Osm boxů z edice nebude v e-shopu k prodeji – budou se **dražit přímo na slavnostním večeru**.`,
+    body: `Vrcholem večera bude dražba osmi boxů s čísly účastníků finále a galavečera. Hosté se do dražby můžou zapojit osobně a jako bonus obdržet box s podpisy hráčů, retro dres finálového zápasu a společné foto s hráči.`,
   },
   {
     slug: "obchodni-podminky",
