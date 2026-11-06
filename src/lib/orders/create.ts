@@ -214,7 +214,8 @@ export async function createOrder(raw: unknown, ip: string | null) {
           fbp: input.tracking?.consent ? input.tracking.fbp : null,
           fbc: input.tracking?.consent ? input.tracking.fbc : null,
           reservedUntil,
-          ...(isTransfer ? { verifyToken: crypto.randomBytes(24).toString("base64url"), verifyState: "WAITING" as const } : {}),
+          // ověřování platby převodem – jednorázové odkazy vydá až ověřovací e-mail
+          ...(isTransfer ? { verifyState: "WAITING" as const } : {}),
           items: {
             create: cart.lines.map((l) => ({
               productId: l.productId,

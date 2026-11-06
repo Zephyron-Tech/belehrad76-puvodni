@@ -85,6 +85,15 @@ function button(href: string, label: string): string {
 </td></tr>`;
 }
 
+/** Zvýrazněné sdělení: zlatá linka vlevo, světlejší podklad. */
+function notice(html: string): string {
+  return `<tr><td style="padding:24px 40px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td bgcolor="${C.panel2}" style="background:${C.panel2};border-left:2px solid ${C.gold};padding:16px 20px;font-family:${SANS};font-size:14px;line-height:1.7;color:${C.cream};">${html}</td>
+</tr></table>
+</td></tr>`;
+}
+
 function outlineButton(href: string, label: string): string {
   return `<tr><td align="center" style="padding:12px 40px 0;">
 <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border:1px solid ${C.gold};">
@@ -93,7 +102,7 @@ function outlineButton(href: string, label: string): string {
 </td></tr>`;
 }
 
-/** Platební údaje převodem: účet, IBAN, VS, částka, QR, doba ověření a tlačítko „Zaplatil jsem“. */
+/** Platební údaje převodem: účet, IBAN, VS, částka, QR, doba ověření a informace o zrušení. */
 function transferBlock(
   settings: Settings,
   t: TransferInstructions,
@@ -121,15 +130,14 @@ function transferBlock(
 ${qr}
 </tr></table>
 </td></tr>
-${para(`Po zaplacení klikněte na „Zaplatil jsem“.${verifyTime ? ` Ověření platby obvykle trvá ${esc(verifyTime)}.` : ""} Po připsání platby obdržíte potvrzení.`, { muted: true })}
-${para(esc(transferCancelNotice(settings.num("reservation.transfer_days"), opts.cancelFrom)), { muted: true })}
-${button(`${opts.orderUrl}#zaplatil`, "Zaplatil jsem")}`;
+${para(`Platbu prosím odešlete na uvedený účet, nebo naskenujte QR kód v aplikaci své banky.${verifyTime ? ` Ověření platby obvykle trvá ${esc(verifyTime)}` : ""}${verifyTime ? "; jakmile ji přijmeme, zašleme vám potvrzení." : " Jakmile ji přijmeme, zašleme vám potvrzení."}`, { muted: true })}
+${para(esc(transferCancelNotice(settings.num("reservation.transfer_days"), opts.cancelFrom)), { muted: true })}`;
 }
 
 function transferText(settings: Settings, t: TransferInstructions, orderUrl: string, cancelFrom: Date): string {
   const verifyTime = settings.str("payment.verify_time");
   const cancel = transferCancelNotice(settings.num("reservation.transfer_days"), cancelFrom);
-  return `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nK úhradě: ${formatCzk(t.amountCzk)}\n\nPo zaplacení klikněte na „Zaplatil jsem“: ${orderUrl}#zaplatil\n${verifyTime ? `Ověření platby obvykle trvá ${verifyTime}.\n` : ""}${cancel ? `${cancel}\n` : ""}`;
+  return `PLATEBNÍ ÚDAJE\nČíslo účtu: ${t.account}\nIBAN: ${t.iban}\nVariabilní symbol: ${t.variableSymbol}\nK úhradě: ${formatCzk(t.amountCzk)}\n\nPlatbu prosím odešlete na uvedený účet, nebo naskenujte QR kód v aplikaci své banky.\n${verifyTime ? `Ověření platby obvykle trvá ${verifyTime}.\n` : ""}${cancel ? `${cancel}\n` : ""}`;
 }
 
 function layout(settings: Settings, title: string, body: string, preheader: string): string {
@@ -242,6 +250,12 @@ export function orderReceivedMail(
   let payment = "";
   let paymentText = "";
 
+  // E-mail odchází hned po objednávce – u platby kartou mohl zákazník mezitím zaplatit v bráně (potvrzení platby
+  // přijde zvlášť, často skoro současně). Ať neplatí podruhé.
+  const gopayPaidText =
+    "Pokud jste již zaplatili prostřednictvím platební brány na našem webu, nic dalšího neplaťte – potvrzení o přijetí platby vám zašleme samostatně.";
+  const gopayPaid = order.paymentMethod === "GOPAY" ? notice(`<strong style="color:${C.goldLight};">Důležité:</strong> ${esc(gopayPaidText)}`) : "";
+
   if (order.paymentMethod === "BANK_TRANSFER" && opts.transfer) {
     payment = transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: order.createdAt });
     paymentText = transferText(settings, opts.transfer, opts.orderUrl, order.createdAt);
@@ -252,17 +266,19 @@ export function orderReceivedMail(
     title,
     `${statusBlock("pending", "Objednávka přijata", "Čeká na úhradu")}
 ${para(`Objednávka č. <span style="color:${C.goldLight};">${esc(order.number)}</span> · ${esc(formatDateTime(order.createdAt))}`, { muted: true, center: true })}
+${para("Děkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.", { center: true })}
+${gopayPaid}
 ${sectionTitle("Objednávka")}
 ${itemsTable(order)}
 ${payment}
 ${deliveryBlock(order, settings)}
 ${notesBlock(order, settings)}
-${order.eveningInterest ? para(`Po zaplacení budete zařazeni do losování o vstup na slavnostní večer. ${esc(EVENING_ENTRY_NOTE)}`, { muted: true }) : ""}
+${order.eveningInterest ? para(`Po zaplacení vás zařadíme do losování o vstup na galavečer ${esc(settings.str("evening.date"))}. ${esc(EVENING_ENTRY_NOTE)}`, { muted: true }) : ""}
 `,
     `Čeká na úhradu ${formatCzk(order.totalCzk)}.`,
   );
 
-  const text = `OBJEDNÁVKA PŘIJATA – ČEKÁ NA ÚHRADU\nObjednávka č. ${order.number}\n\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení budete zařazeni do losování o vstup na slavnostní večer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `OBJEDNÁVKA PŘIJATA – ČEKÁ NA ÚHRADU\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\n${order.paymentMethod === "GOPAY" ? `\nDŮLEŽITÉ: ${gopayPaidText}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -275,6 +291,7 @@ export function paymentConfirmedMail(order: OrderWithItems, settings: Settings, 
     settings,
     title,
     `${statusBlock("paid", "Platba přijata", `Objednávka č. ${order.number}`)}
+${para("Děkujeme. Vaše platba byla přijata a objednávku nyní připravujeme.", { center: true })}
 <tr><td style="padding:30px 40px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel2}" style="background:${C.panel2};border:1px solid ${C.line};border-top:2px solid ${C.gold};"><tr><td style="padding:22px 24px 16px;">
 <div style="font-family:${SANS};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${C.gold};padding-bottom:10px;">Potvrzení o přijetí platby</div>
@@ -290,7 +307,7 @@ ${rows(
     )}
 </td></tr></table>
 </td></tr>
-${para("Potvrzení o zaplacení je v příloze (PDF). Nejedná se o daňový doklad.", { muted: true })}
+${para("Potvrzení o zaplacení naleznete v příloze (PDF). Nejedná se o daňový doklad.", { muted: true })}
 ${sectionTitle("Předmět platby")}
 ${itemsTable(order)}
 ${deliveryBlock(order, settings)}
@@ -298,17 +315,17 @@ ${notesBlock(order, settings)}
 ${
   order.eveningInterest
     ? para(
-        `Jste zařazeni do losování o vstup na slavnostní večer ${esc(settings.str("evening.date"))}. ${esc(EVENING_ENTRY_NOTE)} O výsledku vás budeme informovat.`,
+        `Jste zařazeni do losování o vstup na galavečer ${esc(settings.str("evening.date"))}. ${esc(EVENING_ENTRY_NOTE)} O výsledku vás budeme informovat.`,
         { muted: true },
       )
     : ""
 }
-${para("O odeslání vás budeme informovat dalším e-mailem.", { muted: true })}
+${para("O odeslání objednávky vás budeme informovat.", { muted: true })}
 ${button(opts.orderUrl, "Stav objednávky")}`,
     `Přijato ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
 
-  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzení o zaplacení je v příloze (PDF). Nejedná se o daňový doklad.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na slavnostní večer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
+  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzení o zaplacení naleznete v příloze (PDF). Nejedná se o daňový doklad.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -354,11 +371,12 @@ export function shippedMail(order: OrderWithItems, settings: Settings, opts: { o
       settings,
       title,
       `${statusBlock("neutral", "Připraveno k převzetí", `Objednávka č. ${order.number}`)}
+${para("Vaše objednávka je připravena k osobnímu převzetí.", { center: true })}
 ${deliveryBlock(order, settings)}
-${para("Při převzetí uveďte číslo objednávky a prokažte věk 18+ dokladem totožnosti.", { muted: true })}`,
+${para("Při převzetí prosím uveďte číslo objednávky a prokažte se dokladem totožnosti (18+).", { muted: true })}`,
       `Objednávka ${order.number} čeká na převzetí.`,
     );
-    const text = `PŘIPRAVENO K PŘEVZETÍ\nObjednávka č. ${order.number}\n\nAdresa: ${settings.str("pickup.address")}\n${settings.str("pickup.note")}\n\nPři převzetí uveďte číslo objednávky a prokažte věk 18+.\n`;
+    const text = `PŘIPRAVENO K PŘEVZETÍ\nObjednávka č. ${order.number}\n\nAdresa: ${settings.str("pickup.address")}\n${settings.str("pickup.note")}\n\nPři převzetí prosím uveďte číslo objednávky a prokažte se dokladem totožnosti (18+).\n`;
     return { subject: title, html, text };
   }
 
@@ -369,20 +387,20 @@ ${para("Při převzetí uveďte číslo objednávky a prokažte věk 18+ doklade
   const html = layout(
     settings,
     title,
-    `${statusBlock("neutral", "Odesláno", `Objednávka č. ${order.number}`)}
+    `${statusBlock("neutral", "Zásilka je na cestě", `Objednávka č. ${order.number}`)}
 ${sectionTitle("Zásilka")}
 <tr><td style="padding:4px 40px 0;">${rows(shipment)}</td></tr>
 ${deliveryBlock(order, settings)}
 ${para(
   order.deliveryMethod === "PACKETA"
-    ? "Jakmile zásilka dorazí na výdejní místo, Zásilkovna vám pošle kód pro vyzvednutí. Zásilka obsahuje alkohol – při vyzvednutí prokažte věk 18+ dokladem totožnosti."
-    : "Zásilka obsahuje alkohol – při převzetí může dopravce ověřit věk 18+.",
+    ? "Jakmile zásilka dorazí na výdejní místo, Zásilkovna vám zašle kód k vyzvednutí. Zásilka obsahuje alkohol – při vyzvednutí se prosím prokažte dokladem totožnosti (18+)."
+    : "Zásilka obsahuje alkohol – dopravce může při převzetí ověřit váš věk (18+).",
   { muted: true },
 )}
 ${button(opts.orderUrl, "Stav objednávky")}`,
     `Objednávka ${order.number} je na cestě.`,
   );
-  const text = `ODESLÁNO\nObjednávka č. ${order.number}\n\nDopravce: ${order.carrier}\n${order.trackingNumber ? `Číslo zásilky: ${order.trackingNumber}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `ZÁSILKA JE NA CESTĚ\nObjednávka č. ${order.number}\n\nDopravce: ${order.carrier}\n${order.trackingNumber ? `Číslo zásilky: ${order.trackingNumber}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -412,7 +430,6 @@ export function verifyPaymentMail(
     ["Na účet", esc(t.account)],
     ["IBAN", esc(formatIban(t.iban))],
     ["Objednáno", esc(formatDateTime(order.createdAt))],
-    ["Zákazník hlásí „Zaplatil jsem“", order.paymentClaimedAt ? esc(formatDateTime(order.paymentClaimedAt)) : "zatím ne"],
   ];
   if (order.reminderCount > 0) lookup.push(["Upomínky", `${order.reminderCount}× (poslední ${esc(formatDateTime(order.reminderSentAt))})`]);
 
@@ -436,7 +453,7 @@ ${rows(lookup)}
 ${button(opts.links.paid, "Zaplaceno")}
 ${outlineButton(opts.links.remind, "Nezaplaceno – poslat upomínku")}
 ${outlineButton(opts.links.manual, "Nezaplaceno – vyřeším sám")}
-${para("Odkaz otevře stránku se shrnutím, potvrzuje se tlačítkem. Funguje bez přihlášení – e-mail nepřeposílejte. Úplné zrušení objednávky (uvolnění boxu) jen v administraci.", { muted: true, center: true })}
+${para("Odkazy jsou jednorázové: otevřou stránku se shrnutím a potvrzuje se tlačítkem. Po prvním rozhodnutí přestanou platit všechny odkazy v tomto e-mailu. Fungují bez přihlášení – e-mail proto nepřeposílejte. Úplné zrušení objednávky (uvolnění boxu) jen v administraci.", { muted: true, center: true })}
 ${sectionTitle("Zákazník")}
 <tr><td style="padding:4px 40px 0;">${rows(customer)}</td></tr>
 ${sectionTitle("Objednávka")}
@@ -453,11 +470,11 @@ Variabilní symbol: ${t.variableSymbol}
 Částka: ${formatCzk(t.amountCzk)}
 Na účet: ${t.account} (IBAN ${t.iban})
 Objednáno: ${formatDateTime(order.createdAt)}
-Zákazník hlásí „Zaplatil jsem“: ${order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : "zatím ne"}
 ${order.reminderCount > 0 ? `Upomínky: ${order.reminderCount}×\n` : ""}
 Zaplaceno: ${opts.links.paid}
 Nezaplaceno – poslat upomínku: ${opts.links.remind}
 Nezaplaceno – vyřeším sám: ${opts.links.manual}
+(Odkazy jsou jednorázové – po prvním rozhodnutí přestanou platit všechny.)
 
 ${order.firstName} ${order.lastName}, ${order.email}, ${order.phone}${billing ? `\n${billing}` : ""}
 
@@ -468,7 +485,7 @@ Administrace: ${opts.adminUrl}
   return { subject: title, html, text };
 }
 
-/** Upomínka zákazníkovi: platba převodem zatím nedorazila. Bez splatnosti, s QR a „Zaplatil jsem“. */
+/** Upomínka zákazníkovi: platba převodem zatím nedorazila. Platební údaje a QR kód. */
 export function paymentReminderMail(
   order: OrderWithItems,
   settings: Settings,
@@ -478,14 +495,14 @@ export function paymentReminderMail(
   const html = layout(
     settings,
     title,
-    `${statusBlock("pending", "Čekáme na platbu", `Objednávka č. ${order.number}`)}
-${para("Platbu za objednávku jsme zatím neobdrželi. Pokud jste ji už odeslali, děkujeme – tento e-mail můžete přejít.", { muted: true, center: true })}
+    `${statusBlock("pending", "Připomínka platby", `Objednávka č. ${order.number}`)}
+${para("Dovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, považujte prosím tuto zprávu za bezpředmětnou.", { center: true })}
 ${transferBlock(settings, opts.transfer, { orderUrl: opts.orderUrl, qrCid: opts.qrCid, cancelFrom: new Date() })}
 ${sectionTitle("Objednávka")}
 ${itemsTable(order)}
 ${deliveryBlock(order, settings)}`,
     `Čekáme na platbu ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
-  const text = `ČEKÁME NA PLATBU\nObjednávka č. ${order.number}\n\nPlatbu za objednávku jsme zatím neobdrželi. Pokud jste ji už odeslali, děkujeme – tento e-mail můžete přejít.\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
+  const text = `PŘIPOMÍNKA PLATBY\nObjednávka č. ${order.number}\n\nDovolujeme si připomenout, že platbu za vaši objednávku jsme dosud neobdrželi. Pokud jste ji mezitím odeslali, považujte prosím tuto zprávu za bezpředmětnou.\n\n${transferText(settings, opts.transfer, opts.orderUrl, new Date())}\n${itemsText(order)}\n`;
   return { subject: title, html, text };
 }

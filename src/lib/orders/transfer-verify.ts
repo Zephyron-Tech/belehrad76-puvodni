@@ -3,10 +3,15 @@
  *
  * Banka není napojená: po objednávce převodem odejde ověřovateli (payment.verify_email) e-mail se všemi údaji
  * pro kontrolu v internetovém bankovnictví a s odkazy Zaplaceno / Nezaplaceno – vyřeším sám / Nezaplaceno – poslat
- * upomínku. Odkazy fungují bez přihlášení (tajný token objednávky), samotné otevření odkazu ale nic nemění –
- * rozhoduje až tlačítko na stránce /overeni-platby. Dokud ověřovatel nerozhodne, e-mail se opakuje každých 24 h.
- * Objednávky převodem se automaticky neruší; zrušení (uvolnění boxu) jen přihlášený admin.
+ * upomínku. Odkazy fungují bez přihlášení, samotné otevření odkazu ale nic nemění – rozhoduje až tlačítko
+ * na stránce /overeni-platby.
+ *
+ * Odkazy jsou jednorázové: každý ověřovací e-mail dostane nový token (starší e-maily tím přestanou platit)
+ * a první rozhodnutí token spotřebuje – ostatní odkazy v e-mailu pak už nic neudělají.
+ * Dokud ověřovatel nerozhodne, e-mail se opakuje každých 24 h. Objednávky převodem se automaticky neruší;
+ * zrušení (uvolnění boxu) jen přihlášený admin.
  */
+import crypto from "node:crypto";
 import { prisma } from "../db";
 import { env } from "../env";
 import { getSettings } from "../settings";
@@ -34,18 +39,19 @@ export function verifyPageUrl(verifyToken: string, action?: VerifyAction) {
   return `${env.appUrl}/overeni-platby/${verifyToken}${action ? `?akce=${akce[action]}` : ""}`;
 }
 
-async function loadOrder(where: { id: number } | { verifyToken: string } | { publicToken: string }) {
+async function loadOrder(where: { id: number } | { verifyToken: string }) {
   return prisma.order.findUnique({ where: where as never, include: { items: true } });
 }
 
 /** Objednávka převodem, která ještě čeká na ověření (nezaplacená, nezrušená). */
-function isOpenTransfer(order: { status: string; paymentMethod: string; anonymizedAt: Date | null; verifyToken: string | null }) {
-  return order.status === "PENDING" && order.paymentMethod === "BANK_TRANSFER" && !order.anonymizedAt && !!order.verifyToken;
+function isOpenTransfer(order: { status: string; paymentMethod: string; anonymizedAt: Date | null }) {
+  return order.status === "PENDING" && order.paymentMethod === "BANK_TRANSFER" && !order.anonymizedAt;
 }
 
 /**
  * Ověřovací e-mail ověřovateli. `repeat` = opakované upozornění (nikdo zatím nerozhodl).
- * Po odeslání uloží čas – další se pošle nejdřív za 24 h.
+ * Vydá nový jednorázový token (odkazy ve starších e-mailech přestanou platit) a uloží čas odeslání –
+ * další e-mail nejdřív za 24 h.
  */
 export async function sendVerifyMail(orderId: number, opts: { repeat?: boolean; now?: Date } = {}) {
   const order = await loadOrder({ id: orderId });
@@ -56,14 +62,17 @@ export async function sendVerifyMail(orderId: number, opts: { repeat?: boolean; 
     console.warn(`[verify] payment.verify_email není nastavený – ověřovací e-mail k objednávce ${order.number} neodešel`);
     return false;
   }
+  const token = crypto.randomBytes(24).toString("base64url");
+  await prisma.order.update({ where: { id: order.id }, data: { verifyToken: token } });
+
   const transfer = transferInstructions(settings.str("bank.account"), order.totalCzk, order.number, settings.str("seller.name"));
   const mail = verifyPaymentMail(order, settings, {
     transfer,
     repeat: !!opts.repeat,
     links: {
-      paid: verifyPageUrl(order.verifyToken!, "paid"),
-      manual: verifyPageUrl(order.verifyToken!, "manual"),
-      remind: verifyPageUrl(order.verifyToken!, "remind"),
+      paid: verifyPageUrl(token, "paid"),
+      manual: verifyPageUrl(token, "manual"),
+      remind: verifyPageUrl(token, "remind"),
     },
     adminUrl: `${env.appUrl}/admin/objednavky/${order.id}`,
   });
@@ -83,7 +92,6 @@ export async function resendPendingVerifications(now = new Date()): Promise<numb
       paymentMethod: "BANK_TRANSFER",
       verifyState: "WAITING",
       anonymizedAt: null,
-      verifyToken: { not: null },
       OR: [{ verifyMailSentAt: null }, { verifyMailSentAt: { lte: new Date(now.getTime() - VERIFY_REPEAT_MS) } }],
     },
     select: { id: true, verifyMailSentAt: true },
@@ -108,7 +116,7 @@ export async function resendPendingVerifications(now = new Date()): Promise<numb
   return sent;
 }
 
-/** Upomínka zákazníkovi: platba nedorazila, platební údaje + QR + „Zaplatil jsem“. Bez splatnosti. */
+/** Upomínka zákazníkovi: platba nedorazila, platební údaje + QR. Bez splatnosti. */
 async function sendPaymentReminder(orderId: number) {
   const order = await loadOrder({ id: orderId });
   if (!order) throw new VerifyError("Objednávka neexistuje.");
@@ -125,23 +133,42 @@ async function sendPaymentReminder(orderId: number) {
 
 export type VerifyResult =
   | { done: true; action: VerifyAction }
-  | { done: false; reason: "already-paid" | "cancelled" | "not-found" };
+  | { done: false; reason: "already-paid" | "cancelled" | "not-found" | "used" };
 
 /**
- * Rozhodnutí ověřovatele (odkaz z e-mailu) nebo admina (detail objednávky).
+ * Rozhodnutí ověřovatele (jednorázový odkaz z e-mailu) nebo admina (detail objednávky, podle id).
  *  - paid:   objednávka zaplacená, standardní e-maily (potvrzení s PDF, upozornění provozovateli)
  *  - manual: „Nezaplaceno – vyřeším sám“ – opakování e-mailů končí, objednávka dál čeká, řeší admin
  *  - remind: „Nezaplaceno – poslat upomínku“ – upomínka zákazníkovi, ověřování běží dál (další e-mail za 24 h)
+ * Odkaz z e-mailu se spotřebuje hned na začátku (atomicky) – druhý klik ani jiný odkaz z téhož e-mailu nic neudělá.
  */
 export async function resolveVerification(
   key: { verifyToken: string } | { orderId: number },
   action: VerifyAction,
   ctx: ActionContext,
 ): Promise<VerifyResult> {
-  const order = await loadOrder("verifyToken" in key ? { verifyToken: key.verifyToken } : { id: key.orderId });
+  let orderId: number;
+  if ("verifyToken" in key) {
+    const found = await prisma.order.findUnique({ where: { verifyToken: key.verifyToken }, select: { id: true } });
+    if (!found) return { done: false, reason: "used" };
+    // Spotřebovat token – vyhraje jen jeden požadavek (dvojklik, dva odkazy najednou)
+    const consumed = await prisma.order.updateMany({
+      where: { id: found.id, verifyToken: key.verifyToken },
+      data: { verifyToken: null },
+    });
+    if (consumed.count !== 1) return { done: false, reason: "used" };
+    orderId = found.id;
+  } else {
+    orderId = key.orderId;
+  }
+
+  const order = await loadOrder({ id: orderId });
   if (!order || order.paymentMethod !== "BANK_TRANSFER") return { done: false, reason: "not-found" };
   if (order.status === "PAID" || order.status === "SHIPPED" || order.status === "COMPLETED") return { done: false, reason: "already-paid" };
   if (order.status === "CANCELLED") return { done: false, reason: "cancelled" };
+
+  // Rozhodnutí z administrace zneplatní i odkazy v posledním e-mailu
+  if (order.verifyToken) await prisma.order.update({ where: { id: order.id }, data: { verifyToken: null } });
 
   if (action === "paid") {
     await markPaid(order.id, ctx);
@@ -157,7 +184,7 @@ export async function resolveVerification(
     return { done: true, action };
   }
 
-  // remind: zabrat (dvojklik nesmí poslat dvě upomínky), odeslat, při chybě vrátit
+  // remind: zabrat (souběžný požadavek z administrace nesmí poslat dvě upomínky), odeslat, při chybě vrátit
   const before = order.reminderSentAt;
   const now = new Date();
   const claimed = await prisma.order.updateMany({
@@ -166,7 +193,7 @@ export async function resolveVerification(
       reminderSentAt: now,
       reminderCount: { increment: 1 },
       verifyState: "WAITING",
-      verifyMailSentAt: now, // další ověřovací e-mail za 24 h
+      verifyMailSentAt: now, // další ověřovací e-mail (s novými odkazy) za 24 h
       stateChangedAt: now,
     },
   });
@@ -188,16 +215,4 @@ export async function resolveVerification(
   }
   await audit({ action: "payment_reminder", orderId: order.id, detail: `upomínka č. ${order.reminderCount + 1}` }, ctx);
   return { done: true, action };
-}
-
-/**
- * Zákazník klikl „Zaplatil jsem“. Jen informace pro ověřovatele a admina – stav objednávky nemění.
- * Vrací objednávku, nebo null, pokud nejde o nezaplacenou objednávku převodem.
- */
-export async function claimPayment(publicToken: string, ip: string | null) {
-  const order = await loadOrder({ publicToken });
-  if (!order || !isOpenTransfer(order)) return null;
-  await prisma.order.update({ where: { id: order.id }, data: { paymentClaimedAt: new Date() } });
-  await audit({ action: "payment_claimed", orderId: order.id }, { source: "customer", ip });
-  return order;
 }

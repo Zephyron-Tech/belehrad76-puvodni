@@ -412,7 +412,6 @@ export function TransferVerifyForm(props: {
   orderId: number;
   label: string;
   inStateFor: string;
-  claimedAt: string | null;
   verifyMailSentAt: string | null;
   reminders: string | null;
   verifyEmail: string;
@@ -426,8 +425,6 @@ export function TransferVerifyForm(props: {
         <span className="block text-xs text-muted">v tomto stavu {props.inStateFor}</span>
       </p>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
-        <dt className="text-muted">„Zaplatil jsem“</dt>
-        <dd>{props.claimedAt ?? "zatím ne"}</dd>
         <dt className="text-muted">Ověřovací e-mail</dt>
         <dd>
           {props.verifyMailSentAt ?? "zatím neodešel"}

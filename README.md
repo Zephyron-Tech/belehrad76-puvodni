@@ -115,13 +115,16 @@ Stavy: **Přijatá (čeká na platbu) → Zaplacená → Odeslaná / Připraven�
 
 ### Platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)
 
-1. Zákazník po objednávce převodem vidí platební údaje a QR kód (stránka objednávky i e-mail) a tlačítko
-   **Zaplatil jsem** – to je jen ujištění pro zákazníka („Ověření platby obvykle trvá 5–9 hodin“), zaznamená se čas.
+1. Zákazník po objednávce převodem vidí platební údaje a QR kód (stránka objednávky i e-mail), „Ověření platby
+   obvykle trvá 5–9 hodin“ a na stránce tlačítko **Přejít na úvod**. Platbu sám nehlásí.
 2. Hned po objednávce odejde **ověřovací e-mail** na `payment.verify_email`: VS, částka, účet, zákazník, položky
-   a odkazy **Zaplaceno / Nezaplaceno – poslat upomínku / Nezaplaceno – vyřeším sám**. Odkazy fungují bez přihlášení
-   (tajný token), otevřou stránku `/overeni-platby/…` se shrnutím – rozhoduje až tlačítko (skenery pošty odkazy otevírají samy).
+   a odkazy **Zaplaceno / Nezaplaceno – poslat upomínku / Nezaplaceno – vyřeším sám**. Odkazy fungují bez přihlášení,
+   otevřou stránku `/overeni-platby/…` se shrnutím – rozhoduje až tlačítko (skenery pošty odkazy otevírají samy).
+   Odkazy jsou **jednorázové**: první rozhodnutí zneplatní všechny, nový ověřovací e-mail zneplatní starší;
+   po rozhodnutí se okno zavře, případně přesměruje na úvod.
 3. Bez rozhodnutí přijde ověřovací e-mail znovu každých 24 h (cron + líné spuštění při běžných požadavcích).
-4. **Zaplaceno** = objednávka zaplacená (potvrzení s PDF zákazníkovi). **Upomínka** = e-mail zákazníkovi s QR,
+4. **Zaplaceno** = objednávka zaplacená (potvrzení s PDF zákazníkovi). **Upomínka** = e-mail zákazníkovi s QR
+   (po „vyřeším sám“ jde upomínka poslat z administrace),
    ověřování běží dál. **Vyřeším sám** = připomínání skončí, objednávka čeká a řeší ji admin.
 5. Objednávky převodem se **automaticky neruší**; zrušení (uvolnění boxu) jen admin v administraci. Zákazník přesto
    všude vidí „Pokud platbu neobdržíme do 7 dní (do …), objednávku zrušíme.“ – jen informace (`reservation.transfer_days`).

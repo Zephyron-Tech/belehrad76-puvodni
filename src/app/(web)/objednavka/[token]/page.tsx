@@ -16,11 +16,11 @@ export const metadata: Metadata = { title: "Objednávka", robots: { index: false
 
 type Props = {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ platba?: string; zaplaceno?: string }>;
+  searchParams: Promise<{ platba?: string }>;
 };
 
 export default async function OrderPage({ params, searchParams }: Props) {
-  const [{ token }, { platba, zaplaceno }] = await Promise.all([params, searchParams]);
+  const [{ token }, { platba }] = await Promise.all([params, searchParams]);
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) notFound();
 
   let order = await prisma.order.findUnique({ where: { publicToken: token }, include: { items: true } });
@@ -40,7 +40,6 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const verifyTime = settings.str("payment.verify_time");
   // Jen informace – automaticky se nic neruší; po upomínce se počítá od upomínky
   const cancelNotice = transferCancelNotice(settings.num("reservation.transfer_days"), order.reminderSentAt ?? order.createdAt);
-  const claimed = !!order.paymentClaimedAt || zaplaceno === "1";
 
   const transfer =
     isPending && order.paymentMethod === "BANK_TRANSFER"
@@ -88,19 +87,10 @@ export default async function OrderPage({ params, searchParams }: Props) {
 
       {isPending && transfer && (
         <>
-          <h1 className="mt-1 font-serif text-4xl font-bold text-gold">{claimed ? "Děkujeme, platbu ověříme" : "Objednávka přijata"}</h1>
+          <h1 className="mt-1 font-serif text-4xl font-bold text-gold">Objednávka přijata</h1>
           <p className="mt-4 text-lg text-cream/85">
-            {claimed ? (
-              <>
-                Jakmile platbu uvidíme na účtu, pošleme vám potvrzení na <strong className="text-cream">{order.email}</strong>.
-                {verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>}
-              </>
-            ) : (
-              <>
-                Zaplaťte prosím převodem nebo naskenujte QR kód v bankovní aplikaci. Údaje jsme poslali i na{" "}
-                <strong className="text-cream">{order.email}</strong>.
-              </>
-            )}
+            Platbu prosím odešlete na uvedený účet, nebo naskenujte QR kód v aplikaci své banky. Platební údaje jsme zaslali
+            také na <strong className="text-cream">{order.email}</strong>.
           </p>
           <div className="mt-8 grid gap-6 border border-gold/50 bg-panel p-6 sm:grid-cols-[1fr_auto]">
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
@@ -118,25 +108,18 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <img src={qr} alt="QR kód pro platbu" width={180} height={180} className="mx-auto bg-white p-1" />
             )}
           </div>
-          <div id="zaplatil" className="mt-6 scroll-mt-24">
-            {claimed ? (
-              <p className="border border-ok/50 bg-ok/10 p-4 text-sm text-cream" role="status">
-                Děkujeme, že jste dali vědět o platbě
-                {order.paymentClaimedAt && <> ({formatDateTime(order.paymentClaimedAt)})</>}.
-                {verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>}
-                {cancelNotice && <> {cancelNotice}</>}
-              </p>
-            ) : (
-              <form method="post" action={`/api/objednavka/${order.publicToken}/zaplaceno`} className="max-w-sm">
-                <button className="w-full bg-gold px-6 py-3 font-bold uppercase tracking-wider text-ink transition hover:bg-gold-light">
-                  Zaplatil jsem
-                </button>
-                <p className="mt-2 text-sm text-muted">
-                  Klikněte po odeslání platby.{verifyTime && <> Ověření platby obvykle trvá {verifyTime}.</>}
-                </p>
-                {cancelNotice && <p className="mt-1 text-sm text-muted">{cancelNotice}</p>}
-              </form>
-            )}
+          <div className="mt-6 space-y-1 text-sm text-muted">
+            {verifyTime && <p>Ověření platby obvykle trvá {verifyTime}. Jakmile platbu přijmeme, zašleme vám potvrzení.</p>}
+            {cancelNotice && <p>{cancelNotice}</p>}
+          </div>
+          <div className="mt-8 max-w-sm">
+            <Link
+              href="/"
+              className="block w-full bg-gold px-6 py-3 text-center font-bold uppercase tracking-wider text-ink transition hover:bg-gold-light"
+            >
+              Přejít na úvod
+            </Link>
+            <p className="mt-2 text-sm text-muted">Po zaplacení přejděte na úvod.</p>
           </div>
         </>
       )}

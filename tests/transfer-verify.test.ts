@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { createOrder } from "@/lib/orders/create";
 import { expireStaleOrders } from "@/lib/orders/expire";
-import { claimPayment, resendPendingVerifications, resolveVerification, VERIFY_REPEAT_MS } from "@/lib/orders/transfer-verify";
+import { resendPendingVerifications, resolveVerification, VERIFY_REPEAT_MS } from "@/lib/orders/transfer-verify";
+import { orderReceivedMail } from "@/lib/mail/templates";
+import { getSettings } from "@/lib/settings";
 import { sentMailLog } from "@/lib/mail/transport";
 import { checkout, resetDb, setSetting } from "./helpers";
 
@@ -70,13 +72,36 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     expect(mailsTo(VERIFIER)[0].subject).toContain("Ověřte platbu");
   });
 
-  it("„Zaplatil jsem“ jen zaznamená čas, stav objednávky nemění", async () => {
+  it("odkazy jsou jednorázové: druhé kliknutí ani jiný odkaz z téhož e-mailu nic neudělá", async () => {
     const order = await transferOrder();
-    expect(await claimPayment(order.publicToken, null)).not.toBeNull();
-    const after = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
-    expect(after.paymentClaimedAt).not.toBeNull();
-    expect(after.status).toBe("PENDING");
-    expect(after.verifyState).toBe("WAITING");
+    const token = order.verifyToken!;
+    expect(await resolveVerification({ verifyToken: token }, "manual", verifier)).toEqual({ done: true, action: "manual" });
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).verifyToken).toBeNull();
+    // jiný odkaz ze stejného e-mailu
+    expect(await resolveVerification({ verifyToken: token }, "paid", verifier)).toEqual({ done: false, reason: "used" });
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("PENDING");
+  });
+
+  it("nový ověřovací e-mail zneplatní odkazy ze staršího", async () => {
+    const order = await transferOrder();
+    const oldToken = order.verifyToken!;
+    expect(await resendPendingVerifications(new Date(Date.now() + hours(25)))).toBe(1);
+    const fresh = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(fresh.verifyToken).not.toBe(oldToken);
+    expect(await resolveVerification({ verifyToken: oldToken }, "paid", verifier)).toEqual({ done: false, reason: "used" });
+    expect(await resolveVerification({ verifyToken: fresh.verifyToken! }, "paid", verifier)).toEqual({ done: true, action: "paid" });
+  });
+
+  it("e-mail „Objednávka přijata“ u platby přes bránu upozorní, ať zákazník už neplatí", async () => {
+    const order = await createOrder(checkout({ paymentMethod: "GOPAY" }), null);
+    const full = await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
+    const mail = orderReceivedMail(full, await getSettings(), { orderUrl: "https://x" });
+    expect(mail.html).toContain("nic dalšího neplaťte");
+    expect(mail.text).toContain("nic dalšího neplaťte");
+    // u převodu ne
+    const transfer = await transferOrder();
+    const t = await prisma.order.findUniqueOrThrow({ where: { id: transfer.id }, include: { items: true } });
+    expect(orderReceivedMail(t, await getSettings(), { orderUrl: "https://x" }).html).not.toContain("nic dalšího neplaťte");
   });
 
   it("Zaplaceno: objednávka zaplacená, zákazník potvrzení s PDF, ověřování končí", async () => {
@@ -91,8 +116,10 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     expect(confirmation?.attachments.some((a) => a.endsWith(".pdf"))).toBe(true);
     expect(await resendPendingVerifications(new Date(Date.now() + hours(48)))).toBe(0);
 
-    // opakované kliknutí na odkaz
-    expect(await resolveVerification({ verifyToken: order.verifyToken! }, "paid", verifier)).toEqual({ done: false, reason: "already-paid" });
+    // opakované kliknutí na odkaz – už spotřebovaný
+    expect(await resolveVerification({ verifyToken: order.verifyToken! }, "paid", verifier)).toEqual({ done: false, reason: "used" });
+    // z administrace (podle id) – objednávka je už zaplacená
+    expect(await resolveVerification({ orderId: order.id }, "paid", { source: "admin" })).toEqual({ done: false, reason: "already-paid" });
   });
 
   it("Nezaplaceno – vyřeším sám: opakování končí, objednávka dál čeká", async () => {
@@ -110,7 +137,8 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     await resolveVerification({ verifyToken: order.verifyToken! }, "manual", verifier);
     sentMailLog.length = 0;
 
-    expect(await resolveVerification({ verifyToken: order.verifyToken! }, "remind", verifier)).toEqual({ done: true, action: "remind" });
+    // po „vyřeším sám“ už odkazy neplatí – upomínku pošle admin z administrace
+    expect(await resolveVerification({ orderId: order.id }, "remind", { source: "admin" })).toEqual({ done: true, action: "remind" });
     const reminder = mailsTo("jan@example.com");
     expect(reminder).toHaveLength(1);
     expect(reminder[0].subject).toContain("Připomínka platby");
@@ -128,7 +156,7 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
   it("neplatný token a zrušená objednávka", async () => {
     expect(await resolveVerification({ verifyToken: "neexistuje-neexistuje-neexistuje" }, "paid", verifier)).toEqual({
       done: false,
-      reason: "not-found",
+      reason: "used",
     });
     const order = await transferOrder();
     await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });

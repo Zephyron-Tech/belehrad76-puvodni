@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { formatCzk, formatDateTime, formatDuration } from "@/lib/format";
 import { formatIban, transferInstructions } from "@/lib/bank";
 import { DELIVERY_LABEL } from "@/lib/labels";
+import { AutoClose } from "./AutoClose";
 
 export const metadata: Metadata = { title: "Ověření platby", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -30,11 +32,52 @@ const DONE: Record<string, string> = {
   manual: "Hotovo – připomínání skončilo. Objednávku řešíte v administraci.",
 };
 
+/** Konečná obrazovka (rozhodnuto / odkaz už neplatí): zkusí zavřít okno, jinak přesměruje na úvod. */
+function Finished({ title, text, tone }: { title: string; text: string; tone: "ok" | "info" | "error" }) {
+  const border = tone === "ok" ? "border-ok/50 bg-ok/10" : tone === "error" ? "border-danger/50 bg-danger/10" : "border-line bg-panel";
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center bg-ink px-4 py-10 text-cream">
+      <p className="text-xs uppercase tracking-[0.3em] text-gold">Ověření platby převodem</p>
+      <h1 className="mt-2 font-serif text-3xl font-bold text-gold">{title}</h1>
+      <p className={`mt-6 border p-4 text-sm ${border}`} role="status">
+        {text}
+      </p>
+      <p className="mt-4 text-sm text-muted">
+        Okno se za okamžik zavře, případně budete přesměrováni na úvod.{" "}
+        <Link href="/" className="text-gold-light underline underline-offset-4">
+          Přejít na úvod
+        </Link>
+      </p>
+      <AutoClose />
+    </main>
+  );
+}
+
 export default async function VerifyPaymentPage({ params, searchParams }: Props) {
   const [{ token }, { akce, hotovo, stav }] = await Promise.all([params, searchParams]);
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) notFound();
   const order = await prisma.order.findUnique({ where: { verifyToken: token }, include: { items: true } });
-  if (!order || order.paymentMethod !== "BANK_TRANSFER" || order.anonymizedAt) notFound();
+
+  // Odkaz je jednorázový: po rozhodnutí (nebo když přišel novější ověřovací e-mail) už k objednávce nevede
+  if (!order || order.paymentMethod !== "BANK_TRANSFER" || order.anonymizedAt) {
+    if (hotovo && DONE[hotovo]) return <Finished title="Hotovo" text={DONE[hotovo]} tone="ok" />;
+    if (stav === "chyba") {
+      return (
+        <Finished
+          title="Akce se nezdařila"
+          text="Akci se nepodařilo dokončit. Objednávku prosím vyřešte v administraci."
+          tone="error"
+        />
+      );
+    }
+    return (
+      <Finished
+        title="Odkaz už neplatí"
+        text="Tento odkaz už byl použit, nebo k objednávce přišel novější ověřovací e-mail. Odkazy jsou jednorázové – po prvním rozhodnutí přestanou platit všechny."
+        tone="info"
+      />
+    );
+  }
 
   const settings = await getSettings();
   const t = transferInstructions(settings.str("bank.account"), order.totalCzk, order.number, settings.str("seller.name"));
@@ -43,7 +86,6 @@ export default async function VerifyPaymentPage({ params, searchParams }: Props)
 
   const rows: [string, string][] = [
     ["Objednáno", formatDateTime(order.createdAt)],
-    ["Zákazník hlásí „Zaplatil jsem“", order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : "zatím ne"],
     ["Zákazník", `${order.firstName} ${order.lastName}`],
     ["E-mail / telefon", `${order.email} · ${order.phone}`],
     ["Doprava", DELIVERY_LABEL[order.deliveryMethod]],
@@ -103,7 +145,10 @@ export default async function VerifyPaymentPage({ params, searchParams }: Props)
               </form>
             );
           })}
-          <p className="pt-2 text-xs text-muted">Úplné zrušení objednávky (uvolnění boxu) jen v administraci po přihlášení.</p>
+          <p className="pt-2 text-xs text-muted">
+            Odkazy jsou jednorázové – po rozhodnutí přestanou platit všechny odkazy z ověřovacího e-mailu. Úplné zrušení
+            objednávky (uvolnění boxu) jen v administraci po přihlášení.
+          </p>
         </section>
       )}
 

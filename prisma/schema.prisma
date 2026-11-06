@@ -133,13 +133,12 @@ model Order {
   packetaRequestedAt  DateTime?
 
   // Platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)
-  /// Tajný token odkazů v ověřovacím e-mailu (Zaplaceno / Nezaplaceno) – fungují bez přihlášení
+  /// Jednorázový token odkazů v posledním ověřovacím e-mailu (Zaplaceno / Nezaplaceno) – bez přihlášení;
+  /// nový e-mail vydá nový token, první rozhodnutí ho spotřebuje (null)
   verifyToken       String?              @unique
   verifyState       TransferVerifyState?
   /// Kdy odešel poslední ověřovací e-mail (další za 24 h, dokud ověřovatel nerozhodne)
   verifyMailSentAt  DateTime?
-  /// Zákazník klikl „Zaplatil jsem“ (jen informace, stav objednávky nemění)
-  paymentClaimedAt  DateTime?
   reminderSentAt    DateTime?
   reminderCount     Int                  @default(0)
   /// Kdy se naposledy změnil stav objednávky nebo stav ověření („jak dlouho je v posledním stavu“)

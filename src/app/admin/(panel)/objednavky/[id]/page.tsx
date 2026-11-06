@@ -228,7 +228,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               orderId={order.id}
               label={verifyLabel}
               inStateFor={formatDuration(order.stateChangedAt)}
-              claimedAt={order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : null}
               verifyMailSentAt={order.verifyMailSentAt ? formatDateTime(order.verifyMailSentAt) : null}
               reminders={order.reminderCount > 0 ? `${order.reminderCount}× (poslední ${formatDateTime(order.reminderSentAt)})` : null}
               verifyEmail={settings.str("payment.verify_email")}

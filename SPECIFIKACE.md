@@ -84,7 +84,7 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
 
 ### 4.3 Po objednávce
 - **Platba proběhla**: stav „zaplaceno“, odečtení skladu, e-mail s potvrzením platby a PDF s informací o zaplacení (objednávka, částka, způsob platby, prodávající, datum). Potvrzení platby se generuje až po úspěšné platbě. Žádná faktura se negeneruje.
-- Okamžitě po vytvoření objednávky přijde krátký e-mail „objednávka přijata“ s údaji k platbě (u převodu s QR kódem a tlačítkem „Zaplatil jsem“, viz 5b).
+- Okamžitě po vytvoření objednávky přijde krátký e-mail „objednávka přijata“ s údaji k platbě (u převodu s QR kódem, viz 5b). U platby přes platební bránu obsahuje zvýrazněné upozornění: „Pokud jste již zaplatili prostřednictvím platební brány na našem webu, nic dalšího neplaťte – potvrzení o přijetí platby vám zašleme samostatně.“ (Oba e-maily mohou přijít téměř současně.)
 - Provozovatel (Petite Eiffel) dostane e-mail s kompletními údaji o každé zaplacené objednávce (zboží, doprava, adresa nebo osobní převzetí, kontakt, zájem o večer). Podle toho zásilky vyřizuje.
 - E-mail o odeslání zásilky (s dopravcem a číslem zásilky) se posílá automaticky při přepnutí objednávky na „odeslaná“ v administraci (viz 4.4).
 
@@ -130,25 +130,26 @@ v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
 
 1. **Pokladna** nabízí platební bránu GoPay a **bankovní převod / QR kód** (`payment.bank_transfer = true`).
 2. **Po vytvoření objednávky převodem** zákazník vidí stránku objednávky a dostane e-mail „Objednávka přijata“:
-   číslo účtu, IBAN, variabilní symbol (= číslo objednávky), částka, QR kód (SPD) a tlačítko **„Zaplatil jsem“**.
-   Zároveň **hned** odejde **ověřovací e-mail** ověřovateli.
-3. **„Zaplatil jsem“** je pro zákazníka jen ujištění: zobrazí „Děkujeme, platbu ověříme. Ověření platby obvykle trvá
-   5–9 hodin.“ Na stavu objednávky nic nemění, jen se zaznamená čas kliknutí (informace pro ověřovatele a admina).
-   Věta o době ověření (`payment.verify_time`, „5–9 hodin“) je i u platebních údajů, v e-mailu „Objednávka přijata“
-   a v upomínce.
+   číslo účtu, IBAN, variabilní symbol (= číslo objednávky), částka a QR kód (SPD). Zároveň **hned** odejde
+   **ověřovací e-mail** ověřovateli.
+3. **Zákazník platbu nehlásí** (tlačítko „Zaplatil jsem“ zrušeno 7. 11. 2026). Stránka objednávky má pod platebními
+   údaji tlačítko **„Přejít na úvod“** s textem „Po zaplacení přejděte na úvod.“ Věta o době ověření
+   (`payment.verify_time`, „Ověření platby obvykle trvá 5–9 hodin“) je u platebních údajů, v e-mailu
+   „Objednávka přijata“ a v upomínce.
 4. **Ověřovací e-mail** obsahuje vše pro kontrolu v internetovém bankovnictví: variabilní symbol a přesnou částku
-   (zvýrazněné), účet/IBAN příjemce, datum objednávky, jméno, e-mail, telefon, firmu/IČO, položky, doručení
-   a případně čas, kdy zákazník klikl „Zaplatil jsem“. Obsahuje tři odkazy, které fungují **bez přihlášení**
-   (z mobilu). Odkaz otevře stránku se shrnutím a tlačítkem pro potvrzení – samotné otevření odkazu nic nemění
-   (antivirové skenery pošty odkazy otevírají samy):
+   (zvýrazněné), účet/IBAN příjemce, datum objednávky, jméno, e-mail, telefon, firmu/IČO, položky a doručení.
+   Obsahuje tři odkazy, které fungují **bez přihlášení** (z mobilu). Odkaz otevře stránku se shrnutím a tlačítkem
+   pro potvrzení – samotné otevření odkazu nic nemění (antivirové skenery pošty odkazy otevírají samy).
+   **Odkazy jsou jednorázové:** první rozhodnutí okamžitě zneplatní všechny odkazy daného e-mailu a každý nový
+   ověřovací e-mail zneplatní odkazy ze starších. Po rozhodnutí se stránka pokusí zavřít okno, jinak přesměruje
+   na úvod; použitý nebo starý odkaz ukáže „Odkaz už neplatí“.
    - **Zaplaceno** → objednávka je zaplacená, odečte se sklad, zákazník dostane potvrzení platby s PDF
      a provozovatel upozornění na zaplacenou objednávku (stejně jako u GoPay).
    - **Nezaplaceno – vyřeším sám** → opakované ověřovací e-maily skončí, objednávka dál čeká na platbu
      a admin ji řeší v administraci.
    - **Nezaplaceno – poslat upomínku** → zákazníkovi odejde upomínka (bod 6) a ověřování běží dál.
 5. **Opakování:** dokud ověřovatel nezvolí žádnou možnost, přijde mu ověřovací e-mail znovu každých 24 hodin.
-6. **Upomínka zákazníkovi:** platba zatím nedorazila, platební údaje, QR kód a tlačítko „Zaplatil jsem“,
-   **bez splatnosti**. Po upomínce začne ověřování znovu (další ověřovací e-mail za 24 hodin).
+6. **Upomínka zákazníkovi:** platba zatím nedorazila, platební údaje a QR kód, **bez splatnosti**. Po upomínce začne ověřování znovu (další ověřovací e-mail za 24 hodin).
 7. **Objednávky převodem se automaticky neruší.** Box zůstává rezervovaný, dokud objednávka není zaplacená,
    nebo ji **přihlášený admin** v administraci nezruší (zrušení uvolní box). Úplné zamítnutí (zrušení) jde jen
    s přihlášením. Objednávky přes GoPay se po vypršení rezervace ruší jako dosud.
@@ -156,7 +157,7 @@ v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
    upomínka) uvádí „Pokud platbu neobdržíme do 7 dní (do datum), objednávku zrušíme.“ – **jen informace**,
    automaticky se nic neruší. Po upomínce se 7 dní počítá od upomínky (`reservation.transfer_days`).
 8. **Administrace:** u objednávky převodem stav ověření (čeká na ověření / nezaplaceno – řeší admin / upomínka
-   odeslána), čas „Zaplatil jsem“ a **jak dlouho je objednávka v posledním stavu**; totéž v seznamu objednávek.
+   odeslána) a **jak dlouho je objednávka v posledním stavu**; totéž v seznamu objednávek.
    Ruční akce Zaplaceno / Vyřeším sám / Poslat upomínku jsou i v detailu objednávky.
 
 ## 6. Právní a provozní náležitosti (pro prodej alkoholu)

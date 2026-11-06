@@ -8,8 +8,8 @@ const ACTIONS: VerifyAction[] = ["paid", "manual", "remind"];
 
 /**
  * Rozhodnutí ověřovatele z ověřovací stránky (SPECIFIKACE 5b): Zaplaceno / Nezaplaceno – vyřeším sám /
- * Nezaplaceno – poslat upomínku. Bez přihlášení, přístup jen s tajným tokenem. Jen POST – odkazy z e-mailu
- * (GET) samy nic nemění.
+ * Nezaplaceno – poslat upomínku. Bez přihlášení, přístup jen s jednorázovým tokenem (první rozhodnutí ho spotřebuje).
+ * Jen POST – odkazy z e-mailu (GET) samy nic nemění.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -27,7 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
 
   try {
     const result = await resolveVerification({ verifyToken: token }, action, { source: "verifier", ip });
-    if (!result.done && result.reason === "not-found") return new NextResponse("Not found", { status: 404 });
+    // Úspěch → „Hotovo“ (okno se zavře / přesměruje na úvod); odkaz už použitý / objednávka vyřízená → „Odkaz už neplatí“
     return NextResponse.redirect(result.done ? `${page}?hotovo=${action}` : page, 303);
   } catch (err) {
     console.error("[verify] resolve failed", err);
