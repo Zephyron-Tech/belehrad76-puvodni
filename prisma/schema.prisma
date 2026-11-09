@@ -154,7 +154,7 @@ model Order {
   note         String?
   internalNote String?
 
-  // Slavnostní večer 30. 11. 2026
+  // Galavečer 30. 11. 2026
   eveningInterest Boolean @default(false)
 
   // Souhlasy

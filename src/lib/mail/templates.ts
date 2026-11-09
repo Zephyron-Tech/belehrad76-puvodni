@@ -245,9 +245,15 @@ function deliveryBlock(order: OrderWithItems, settings: Settings): string {
 <tr><td style="padding:4px 40px 0;font-family:${SANS};font-size:14px;line-height:1.7;color:${C.cream};">${lines.filter(Boolean).map(esc).join("<br>")}</td></tr>`;
 }
 
+/** Kdy začne rozvoz (textová verze e-mailu) */
+function startNoteText(settings: Settings): string {
+  const note = settings.str("shipping.start_note");
+  return note ? `\n${note}\n` : "";
+}
+
 /** Doručení a dodací lhůta: box kurýrem (jen při doručení na adresu), kusovky na objednávku */
 function notesBlock(order: OrderWithItems, settings: Settings): string {
-  const notes: string[] = [];
+  const notes: string[] = [settings.str("shipping.start_note")];
   if (order.deliveryMethod === "SHIPPING" && order.items.some((i) => i.type === "BOX")) notes.push(settings.str("box.delivery"));
   if (order.items.some((i) => i.madeToOrder)) notes.push(settings.str("bottle.lead_time"));
   if (notes.filter(Boolean).length === 0) return "";
@@ -296,7 +302,7 @@ ${order.eveningInterest ? para(`Po zaplacení vás zařadíme do losování o vs
     isTransfer ? `Čeká na úhradu ${formatCzk(order.totalCzk)}.` : `Objednávku ${order.number} jsme obdrželi.`,
   );
 
-  const text = `POTVRZENÍ DORUČENÍ OBJEDNÁVKY${isTransfer ? " – ČEKÁ NA ÚHRADU" : ""}\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\nToto je automatické potvrzení doručení objednávky. Přijetí objednávky vám potvrdíme samostatným e-mailem po přijetí platby.\n${isTransfer ? `\nDŮLEŽITÉ: ${ALREADY_PAID_TRANSFER}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `POTVRZENÍ DORUČENÍ OBJEDNÁVKY${isTransfer ? " – ČEKÁ NA ÚHRADU" : ""}\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\nToto je automatické potvrzení doručení objednávky. Přijetí objednávky vám potvrdíme samostatným e-mailem po přijetí platby.\n${isTransfer ? `\nDŮLEŽITÉ: ${ALREADY_PAID_TRANSFER}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${startNoteText(settings)}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -343,7 +349,7 @@ ${button(opts.orderUrl, "Stav objednávky")}`,
     `Přijato ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
 
-  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzujeme přijetí vaší objednávky. V příloze naleznete potvrzení o zaplacení a obchodní podmínky platné pro tuto objednávku (PDF). Potvrzení o zaplacení není daňový doklad.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
+  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzujeme přijetí vaší objednávky. V příloze naleznete potvrzení o zaplacení a obchodní podmínky platné pro tuto objednávku (PDF). Potvrzení o zaplacení není daňový doklad.\n\n${itemsText(order)}\n${startNoteText(settings)}\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -357,7 +363,7 @@ export function ownerPaidMail(order: OrderWithItems, settings: Settings, opts: {
     ["Telefon", esc(order.phone)],
   ];
   if (billing) customer.push(["Fakturační údaje", esc(billing)]);
-  customer.push(["Platba", esc(PAYMENT_LABEL[order.paymentMethod])], ["Zájem o slavnostní večer", order.eveningInterest ? "ANO" : "ne"]);
+  customer.push(["Platba", esc(PAYMENT_LABEL[order.paymentMethod])], ["Zájem o galavečer", order.eveningInterest ? "ANO" : "ne"]);
 
   const html = layout(
     settings,

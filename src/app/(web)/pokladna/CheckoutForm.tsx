@@ -23,6 +23,8 @@ type Props = {
   boxShippingCzk: number;
   /** Platba převodem / QR kódem (nastavení payment.bank_transfer) – teď vypnutá, platí se jen bránou */
   bankTransferEnabled: boolean;
+  gopayEnabled: boolean;
+  shippingStartNote: string;
   packetaApiKey?: string;
   packetaMock: boolean;
   turnstileSiteKey?: string;
@@ -40,8 +42,9 @@ export function CheckoutForm(props: Props) {
 
   const [delivery, setDelivery] = useState<Delivery>("PACKETA");
   const [packetaPoint, setPacketaPoint] = useState<PacketaPoint | null>(null);
-  const [paymentChoice, setPayment] = useState<Payment>("GOPAY");
-  const payment: Payment = props.bankTransferEnabled ? paymentChoice : "GOPAY";
+  const [paymentChoice, setPayment] = useState<Payment>(props.gopayEnabled ? "GOPAY" : "BANK_TRANSFER");
+  // Vypnutá brána / převod: zbývající způsob platby se zvolí sám
+  const payment: Payment = !props.gopayEnabled ? "BANK_TRANSFER" : props.bankTransferEnabled ? paymentChoice : "GOPAY";
   const [company, setCompany] = useState(false);
   const [evening, setEvening] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -210,6 +213,7 @@ export function CheckoutForm(props: Props) {
 
         <fieldset>
           <legend className="font-serif text-2xl font-bold text-gold">Doprava</legend>
+          {props.shippingStartNote && <p className="mt-3 border-l-2 border-gold pl-3 text-sm text-cream/90">{props.shippingStartNote}</p>}
           <div className="mt-4 grid gap-3">
             {data.pickupEnabled && (
               <label className={`flex cursor-pointer items-start gap-3 border p-4 ${effectiveDelivery === "PICKUP" ? "border-gold bg-panel" : "border-line"}`}>
@@ -297,16 +301,18 @@ export function CheckoutForm(props: Props) {
         <fieldset>
           <legend className="font-serif text-2xl font-bold text-gold">Platba</legend>
           <div className="mt-4 grid gap-3">
-            <label className={`flex cursor-pointer items-start gap-3 border p-4 ${payment === "GOPAY" ? "border-gold bg-panel" : "border-line"}`}>
-              <input type="radio" name="payment" checked={payment === "GOPAY"} onChange={() => setPayment("GOPAY")} className="mt-1 accent-[var(--gold)]" />
-              <span>
-                <span className="block font-semibold">Online kartou nebo bankovním převodem</span>
-                <span className="block text-sm text-muted">
-                  Platební brána GoPay (karta, Apple Pay, Google Pay, rychlý převod). Pokud platbu v bráně nedokončíte do {props.gopayMinutes} minut, zašleme vám platební údaje pro převod / QR kód.
+{props.gopayEnabled && (
+                          <label className={`flex cursor-pointer items-start gap-3 border p-4 ${payment === "GOPAY" ? "border-gold bg-panel" : "border-line"}`}>
+                <input type="radio" name="payment" checked={payment === "GOPAY"} onChange={() => setPayment("GOPAY")} className="mt-1 accent-[var(--gold)]" />
+                <span>
+                  <span className="block font-semibold">Online kartou nebo bankovním převodem</span>
+                  <span className="block text-sm text-muted">
+                    Platební brána GoPay (karta, Apple Pay, Google Pay, rychlý převod). Pokud platbu v bráně nedokončíte do {props.gopayMinutes} minut, zašleme vám platební údaje pro převod / QR kód.
+                  </span>
                 </span>
-              </span>
-            </label>
-            {props.bankTransferEnabled && (
+              </label>
+            )}
+            {(props.bankTransferEnabled || !props.gopayEnabled) && (
               <label className={`flex cursor-pointer items-start gap-3 border p-4 ${payment === "BANK_TRANSFER" ? "border-gold bg-panel" : "border-line"}`}>
                 <input type="radio" name="payment" checked={payment === "BANK_TRANSFER"} onChange={() => setPayment("BANK_TRANSFER")} className="mt-1 accent-[var(--gold)]" />
                 <span>
@@ -350,11 +356,11 @@ export function CheckoutForm(props: Props) {
         {/* Losování o vstup jen při nákupu boxu (1 vstup na 1 box) */}
         {hasBox && (
           <fieldset className="border border-gold/40 bg-panel p-5">
-            <legend className="px-2 font-serif text-xl font-bold text-gold">Slavnostní večer {props.eveningDate}</legend>
+            <legend className="px-2 font-serif text-xl font-bold text-gold">Galavečer {props.eveningDate}</legend>
             <label className="flex items-start gap-3">
               <input type="checkbox" checked={evening} onChange={(e) => setEvening(e.target.checked)} className="mt-1 accent-[var(--gold)]" />
               <span>
-                Chci se zúčastnit losování o vstup na slavnostní večer {props.eveningDate}
+                Chci se zúčastnit losování o vstup na galavečer {props.eveningDate}
                 <span className="block text-sm text-muted">
                   Do losování zařadíme zaplacené objednávky boxů z předprodeje. {EVENING_ENTRY_NOTE}
                 </span>

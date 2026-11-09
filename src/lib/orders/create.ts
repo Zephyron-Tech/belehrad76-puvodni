@@ -156,6 +156,9 @@ export async function createOrder(raw: unknown, ip: string | null) {
   if (!settings.bool("sales.open")) throw new CheckoutError("Prodej momentálně není spuštěn.");
   if (cart.issues.length > 0) throw new CheckoutError(cart.issues.map((i) => i.message).join(" "));
   if (cart.lines.length === 0) throw new CheckoutError("Košík je prázdný.");
+  if (input.paymentMethod === "GOPAY" && !settings.bool("payment.gopay")) {
+    throw new CheckoutError("Platba přes platební bránu není k dispozici. Zvolte prosím platbu převodem / QR kódem.");
+  }
   if (input.paymentMethod === "BANK_TRANSFER" && !settings.bool("payment.bank_transfer")) {
     throw new CheckoutError("Platba převodem není k dispozici. Zvolte prosím platbu přes platební bránu.");
   }

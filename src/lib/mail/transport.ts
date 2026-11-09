@@ -11,10 +11,12 @@ export type OutgoingMail = {
   text: string;
   attachments?: Mail.Attachment[];
   replyTo?: string;
+  /** Kopie (víc adres oddělených čárkou) */
+  cc?: string;
 };
 
 /** Poslední odeslané e-maily (pro testy a ladění). */
-export const sentMailLog: { to: string; subject: string; attachments: string[] }[] = [];
+export const sentMailLog: { to: string; cc?: string; subject: string; attachments: string[] }[] = [];
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -37,6 +39,7 @@ export async function sendMail(mail: OutgoingMail) {
   const info = await getTransporter().sendMail({
     from: env.mailFrom,
     to: mail.to,
+    cc: mail.cc || undefined,
     replyTo: mail.replyTo,
     subject: mail.subject,
     html: mail.html,
@@ -46,6 +49,7 @@ export async function sendMail(mail: OutgoingMail) {
 
   sentMailLog.push({
     to: mail.to,
+    cc: mail.cc || undefined,
     subject: mail.subject,
     attachments: (mail.attachments ?? []).map((a) => String(a.filename ?? "")),
   });

@@ -4,7 +4,7 @@ import { CartButton } from "./cart/CartButton";
 const NAV = [
   { href: "/#edice", label: "Edice" },
   { href: "/eshop", label: "E-shop" },
-  { href: "/#vecer", label: "Slavnostní večer" },
+  { href: "/#vecer", label: "Galavečer" },
   { href: "/#nadace", label: "Nadace" },
   { href: "/kontakt", label: "Kontakt" },
 ];

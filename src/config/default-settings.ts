@@ -91,14 +91,24 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
     description: "Platba převodem: za kolik dní od objednávky / upomínky zákazníkovi píšeme, že objednávku zrušíme (jen informace, automaticky se neruší).",
   },
   {
+    key: "payment.gopay",
+    value: "false",
+    description: "Platba přes platební bránu GoPay (true/false). Vypnuto = platí se jen převodem / QR kódem.",
+  },
+  {
     key: "payment.bank_transfer",
     value: "true",
     description: "Platba bankovním převodem / QR kódem (true/false). Vypnuto = platí se jen přes platební bránu GoPay.",
   },
   {
     key: "payment.verify_email",
+    value: "jan.kukula@petiteeiffel.cz, fakturace@petiteeiffel.cz",
+    description: "Kdo ověřuje platby převodem v internetovém bankovnictví – ověřovací e-mail s odkazy Zaplaceno / Nezaplaceno (víc adres oddělit čárkou)",
+  },
+  {
+    key: "payment.verify_cc",
     value: "rychlikjan52@gmail.com",
-    description: "Kdo ověřuje platby převodem v internetovém bankovnictví (ověřovací e-mail s odkazy Zaplaceno / Nezaplaceno)",
+    description: "Kopie ověřovacích e-mailů o platbě (víc adres oddělit čárkou; prázdné = bez kopie)",
   },
   { key: "payment.verify_time", value: "5–9 hodin", description: "Jak dlouho obvykle trvá ověření platby převodem (text pro zákazníka)" },
   { key: "bank.account", value: "303642799/0300", description: "Číslo účtu pro platbu převodem (formát číslo/kód banky)" },
@@ -113,6 +123,7 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
       "Třináct hráčů finále, každý na vlastní lahvi speciální 50% slivovice.\nLegendární vítězství. Výjimečná sběratelská edice: 152 číslovaných boxů po 13 lahvích, dohromady 1976 lahví.",
     description: "Úvodní odstavec (nový řádek = nový odstavec)",
   },
-  { key: "evening.date", value: "30. 11. 2026", description: "Datum slavnostního večera" },
+  { key: "evening.date", value: "30. 11. 2026", description: "Datum galavečera" },
+  { key: "shipping.start_note", value: "Rozvoz objednávek začne až 1. 12. 2026, po galavečeru.", description: "Kdy začne rozvoz objednávek – pokladna, stránka objednávky a e-maily (prázdné = nezobrazovat)" },
   { key: "seo.description", value: "Limitovaná edice slivovice Mistři Evropy – Bělehrad 1976. 152 sběratelských boxů, 13 hráčů, 1 976 lahví. Výtěžek edice jde na podporu Nadace fotbalových internacionálů.", description: "Popis webu pro vyhledávače a sdílení" },
 ];

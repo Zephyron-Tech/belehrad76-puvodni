@@ -9,7 +9,7 @@ import { getSettings } from "@/lib/settings";
 import { sentMailLog } from "@/lib/mail/transport";
 import { checkout, resetDb, setSetting } from "./helpers";
 
-const VERIFIER = "rychlikjan52@gmail.com";
+const VERIFIER = "jan.kukula@petiteeiffel.cz, fakturace@petiteeiffel.cz";
 const verifier = { source: "verifier" as const, ip: "127.0.0.1" };
 const hours = (n: number) => n * 3_600_000;
 const mailsTo = (to: string) => sentMailLog.filter((m) => m.to === to);
@@ -36,6 +36,7 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     const verify = mailsTo(VERIFIER);
     expect(verify).toHaveLength(1);
     expect(verify[0].subject).toContain(`VS ${order.number}`);
+    expect(verify[0].cc).toBe("rychlikjan52@gmail.com");
     expect(verify[0].subject).toContain("Ověřte platbu");
   });
 
@@ -101,6 +102,8 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     expect(gm.html).not.toContain("Čeká na úhradu");
     expect(gm.html).not.toContain("Variabilní symbol");
     expect(gm.html).toContain("Děkujeme za objednávku");
+    expect(gm.html).toContain("Rozvoz objednávek začne až 1. 12. 2026, po galavečeru.");
+    expect(gm.text).toContain("Rozvoz objednávek začne až 1. 12. 2026, po galavečeru.");
 
     const transfer = await transferOrder();
     const t = await prisma.order.findUniqueOrThrow({ where: { id: transfer.id }, include: { items: true } });

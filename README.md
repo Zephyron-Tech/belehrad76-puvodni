@@ -70,8 +70,10 @@ Nejdůležitější klíče v `Setting` (úplný seznam s popisy: [`src/config/d
 | `box.delivery` | | Text o doručení boxu (kurýr, 8 dní) |
 | `reservation.gopay_minutes` | 60 | Po kolika minutách se nezaplacená GoPay objednávka převede na převod / QR (nic se automaticky neruší) |
 | `order.max_boxes` / `order.max_bottles` | 10 / 50 | Limit na objednávku |
+| `payment.gopay` | `false` | Platba přes platební bránu GoPay v pokladně – zatím vypnutá (`false` = jen převod / QR) |
 | `payment.bank_transfer` | `true` | Platba převodem / QR kódem v pokladně (`false` = jen GoPay) |
-| `payment.verify_email` | rychlikjan52@gmail.com | Ověřovatel plateb převodem (ověřovací e-mail s odkazy) |
+| `payment.verify_email` | jan.kukula@petiteeiffel.cz, fakturace@petiteeiffel.cz | Ověřovatelé plateb převodem (ověřovací e-mail s odkazy) |
+| `payment.verify_cc` | rychlikjan52@gmail.com | Kopie ověřovacích e-mailů |
 | `payment.verify_time` | 5–9 hodin | Doba ověření platby (text pro zákazníka) |
 | `bank.account` | 303642799/0300 | Účet pro platbu převodem a QR |
 | `contact.email`, `contact.phone`, `owner.notify_email` | | **Doplnit skutečné adresy** |
@@ -136,7 +138,7 @@ Stavy: **Přijatá (čeká na platbu) → Zaplacená → Odeslaná / Připraven�
 - **Odesláno:** zadat dopravce a číslo zásilky → zákazníkovi odejde e-mail. U osobního převzetí e-mail „připraveno k převzetí“.
 - **Zrušit:** box se vrátí na sklad; u zaplacené objednávky je nutné vrátit peníze ručně. Zaškrtávátko „Poslat zákazníkovi
   e-mail o zrušení“ (výchozí zapnuto) – e-mail „Objednávka zrušena“, u zaplacené s informací o vrácení peněz.
-- **Exporty:** CSV objednávek pro účetnictví, CSV zájemců o slavnostní večer (pro organizátora losování).
+- **Exporty:** CSV objednávek pro účetnictví, CSV zájemců o galavečer (pro organizátora losování).
 - **Historie změn:** u každé objednávky kdy, odkud (IP) a volitelně kdo (iniciály) – účet je společný.
 - **GDPR:** anonymizace jednotlivé dokončené/zrušené objednávky; hromadně
   `npm run gdpr:anonymize -- --months <N> [--apply]` (dobu uchování určí účetní).

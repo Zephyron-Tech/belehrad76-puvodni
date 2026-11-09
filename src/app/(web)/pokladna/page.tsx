@@ -20,6 +20,8 @@ export default async function CheckoutPage() {
         gopayMinutes={settings.num("reservation.gopay_minutes")}
         boxShippingCzk={settings.num("shipping.box_czk")}
         bankTransferEnabled={settings.bool("payment.bank_transfer")}
+        gopayEnabled={settings.bool("payment.gopay")}
+        shippingStartNote={settings.str("shipping.start_note")}
         packetaApiKey={env.packetaApiKey || undefined}
         packetaMock={env.packetaMock}
         turnstileSiteKey={env.turnstileSiteKey || undefined}

@@ -62,7 +62,7 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
 1. **Úvod**: příběh edice, 152 × 13 = 1 976 lahví, 50 let od vítězství v Bělehradě, slivovice 50 %, CTA na objednávku.
 2. **Produkt/e-shop**: fotky boxu a lahví, obsah boxu (13 hráčů), cena, tlačítko objednat. Zobrazení dostupnosti („zbývá X boxů“).
 3. **Nadace**: blok s informací, že výtěžek jde Nadaci fotbalových internacionálů, bez uvedení částky, s odkazem.
-4. **Večer 30. 11. 2026**: informace o slavnostním večeru moderovaném Jakubem Kohákem, za účasti čtyř českých a čtyř slovenských hráčů. Kupující z předprodeje budou zařazeni do losování o vstup (1 osoba na 1 zakoupený box). Podrobnosti losování řeší někdo jiný, web zatím nese jen obecný text, který zadavatel doplní.
+4. **Večer 30. 11. 2026**: informace o galavečeru moderovaném Jakubem Kohákem, za účasti čtyř českých a čtyř slovenských hráčů. Kupující z předprodeje budou zařazeni do losování o vstup (1 osoba na 1 zakoupený box). Podrobnosti losování řeší někdo jiný, web zatím nese jen obecný text, který zadavatel doplní.
 5. **Dražba**: informace, že 8 boxů se bude dražit na galavečeru. Stačí informační text.
 6. **Kontakt a sociální sítě**: odkazy na FB a IG, kontaktní údaje, odkaz na FAČR pro osobní převzetí.
 7. Právní stránky: obchodní podmínky, ochrana osobních údajů, cookies, reklamační řád, informace o odstoupení od smlouvy.
@@ -127,9 +127,10 @@ Plnohodnotná administrace (úprava textů, cen, fotek) se nevytváří. Je jen 
 ## 5b. Platba převodem s ověřováním e-mailem (potvrzeno 6. 11. 2026)
 
 Banka není napojená, platbu převodem ověřuje člověk s přístupem k účtu (dále **ověřovatel**). E-mail ověřovatele je
-v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
+v nastavení `payment.verify_email` (teď jan.kukula@petiteeiffel.cz a fakturace@petiteeiffel.cz, v kopii `payment.verify_cc`
+rychlikjan52@gmail.com; rozhodne první, kdo klikne – odkazy jsou jednorázové).
 
-1. **Pokladna** nabízí platební bránu GoPay a **bankovní převod / QR kód** (`payment.bank_transfer = true`).
+1. **Pokladna** nabízí platební bránu GoPay (`payment.gopay`, zatím vypnutá) a **bankovní převod / QR kód** (`payment.bank_transfer = true`).
 2. **Po vytvoření objednávky převodem** zákazník vidí stránku objednávky a dostane e-mail „Objednávka přijata“:
    číslo účtu, IBAN, variabilní symbol (= číslo objednávky), částka a QR kód (SPD). Zároveň **hned** odejde
    **ověřovací e-mail** ověřovateli.

@@ -19,6 +19,8 @@ export async function resetDb(boxStock = 144) {
   await prisma.setting.createMany({ data: DEFAULT_SETTINGS });
   // Převod / QR je v provozu vypnutý, testy ho ale dál pokrývají (kód zůstává pro případné zapnutí)
   await prisma.setting.update({ where: { key: "payment.bank_transfer" }, data: { value: "true" } });
+  // Platební brána je zatím vypnutá, testy ji ale dál pokrývají
+  await prisma.setting.update({ where: { key: "payment.gopay" }, data: { value: "true" } });
   await prisma.product.createMany({
     data: [
       { slug: "box", type: "BOX", name: "Box Mistři Evropy", priceCzk: 9880, stock: boxStock, imageUrl: "/img/box.jpg", sortOrder: 0 },

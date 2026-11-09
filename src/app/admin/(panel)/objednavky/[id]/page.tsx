@@ -164,7 +164,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </p>
             </div>
             <div className="sm:col-span-2">
-              <h2 className="font-serif text-lg font-bold text-gold">Slavnostní večer</h2>
+              <h2 className="font-serif text-lg font-bold text-gold">Galavečer</h2>
               <p className="mt-2 text-sm">
                 {order.eveningInterest ? (
                   <strong className="text-gold-light">Má zájem o losování</strong>
@@ -232,7 +232,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               claimedAt={order.paymentClaimedAt ? formatDateTime(order.paymentClaimedAt) : null}
               verifyMailSentAt={order.verifyMailSentAt ? formatDateTime(order.verifyMailSentAt) : null}
               reminders={order.reminderCount > 0 ? `${order.reminderCount}× (poslední ${formatDateTime(order.reminderSentAt)})` : null}
-              verifyEmail={settings.str("payment.verify_email")}
+              verifyEmail={[settings.str("payment.verify_email"), settings.str("payment.verify_cc") && `kopie: ${settings.str("payment.verify_cc")}`].filter(Boolean).join(" · ")}
             />
           )}
           {order.deliveryMethod === "PACKETA" && !order.anonymizedAt && order.status !== "CANCELLED" && (

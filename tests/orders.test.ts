@@ -75,6 +75,12 @@ describe("objednávky a sklad", () => {
     await expect(createOrder(checkout({ paymentMethod: "GOPAY" }), null)).resolves.toBeTruthy();
   });
 
+  it("vypnutá platební brána: objednávku přes GoPay nelze vytvořit, převodem ano", async () => {
+    await setSetting("payment.gopay", "false");
+    await expect(createOrder(checkout({ paymentMethod: "GOPAY" }), null)).rejects.toThrow("Platba přes platební bránu není k dispozici");
+    await expect(createOrder(checkout({ paymentMethod: "BANK_TRANSFER" }), null)).resolves.toBeTruthy();
+  });
+
   it("losování o vstup na večer jen u objednávky s boxem", async () => {
     const bottles = await createOrder(bottlesCheckout([{ slug: "viktor", quantity: 2 }], { eveningInterest: true }), null);
     expect(bottles.eveningInterest).toBe(false);

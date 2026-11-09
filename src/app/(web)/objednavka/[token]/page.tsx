@@ -215,7 +215,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
           )}
           {order.eveningInterest && (
             <div>
-              <dt className="text-muted">Slavnostní večer</dt>
+              <dt className="text-muted">Galavečer</dt>
               <dd>
                 Zájem o losování o vstup
                 <span className="block text-sm text-muted">{EVENING_ENTRY_NOTE}</span>
@@ -223,6 +223,9 @@ export default async function OrderPage({ params, searchParams }: Props) {
             </div>
           )}
         </dl>
+        {(isPending || order.status === "PAID") && settings.str("shipping.start_note") && (
+          <p className="mt-4 border-l-2 border-gold pl-3 text-sm text-cream/90">{settings.str("shipping.start_note")}</p>
+        )}
       </section>
 
       {env.gopayMode === "mock" && isPending && order.paymentMethod === "GOPAY" && (

@@ -26,7 +26,7 @@ export const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
   PICKUP: "Osobní převzetí na FAČR",
 };
 
-/** Upozornění k losování o vstup na slavnostní večer (potvrzení objednávky) */
+/** Upozornění k losování o vstup na galavečer (potvrzení objednávky) */
 export const EVENING_ENTRY_NOTE = "Vstup pouze pro 1 osobu na 1 zakoupený box.";
 
 /** Stav ověření platby převodem (SPECIFIKACE 5b), jen u nezaplacené objednávky převodem; jinak null. */

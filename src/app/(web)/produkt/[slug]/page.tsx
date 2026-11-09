@@ -86,7 +86,7 @@ export default async function ProductPage({ params }: Props) {
           <Markdown source={product.description} settings={settings} className="mt-8" />
 
           <p className="mt-6 text-sm text-muted">
-            Kdo si v předprodeji objedná box, může se zařadit do losování o vstup na slavnostní večer {settings.str("evening.date")}.{" "}
+            Kdo si v předprodeji objedná box, může se zařadit do losování o vstup na galavečer {settings.str("evening.date")}.{" "}
             <Link href="/#vecer" className="text-gold-light underline underline-offset-4">
               Více o večeru
             </Link>

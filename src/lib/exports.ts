@@ -79,7 +79,7 @@ export async function ordersCsv(filter: { from?: Date; to?: Date; onlyPaid?: boo
   return { csv: toCsv(rows), count: orders.length };
 }
 
-/** CSV zájemců o slavnostní večer: jen zaplacené objednávky se zájmem o účast. */
+/** CSV zájemců o galavečer: jen zaplacené objednávky se zájmem o účast. */
 export async function eveningCsv() {
   const orders = await prisma.order.findMany({
     where: { eveningInterest: true, status: { in: [...PAID_STATUSES] }, anonymizedAt: null },
