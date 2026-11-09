@@ -37,6 +37,17 @@ export async function middleware(req: NextRequest) {
   const denied = devBasicAuth(req);
   if (denied) return denied;
 
+  const primary = (process.env.PRIMARY_HOST ?? "").trim().toLowerCase();
+  const host = (req.headers.get("host") ?? "").toLowerCase().split(":")[0];
+  const isApi = req.nextUrl.pathname.startsWith("/api/");
+  if (primary && host && host !== primary && host !== "localhost" && host !== "127.0.0.1" && !isApi) {
+    const url = req.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = primary;
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   // Web za PINem před spuštěním (nastavení site.pin; prázdné = veřejný web)
   if (!isPinExempt(req.nextUrl.pathname)) {
     const pin = (await getSettings()).str("site.pin").trim();
@@ -48,17 +59,6 @@ export async function middleware(req: NextRequest) {
       res.headers.set("X-Robots-Tag", "noindex, nofollow");
       return res;
     }
-  }
-
-  const primary = (process.env.PRIMARY_HOST ?? "").trim().toLowerCase();
-  const host = (req.headers.get("host") ?? "").toLowerCase().split(":")[0];
-  const isApi = req.nextUrl.pathname.startsWith("/api/");
-  if (primary && host && host !== primary && host !== "localhost" && host !== "127.0.0.1" && !isApi) {
-    const url = req.nextUrl.clone();
-    url.protocol = "https:";
-    url.host = primary;
-    url.port = "";
-    return NextResponse.redirect(url, 308);
   }
 
   const { pathname } = req.nextUrl;
