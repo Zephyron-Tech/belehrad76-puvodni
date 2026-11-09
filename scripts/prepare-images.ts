@@ -8,7 +8,7 @@
  *   - .webp pro web (menší soubory, podporují všechny současné prohlížeče),
  *   - .jpg pro náhled při sdílení (Facebook, Messenger WebP spolehlivě nezobrazí).
  *
- *   public/img/box/otevreny.(webp|jpg), zavreny.*
+ *   public/img/box/otevreny.(webp|jpg), zavreny.*, uvod-pozadi.* (světlá verze pro pozadí úvodu)
  *   public/img/hraci/<slug>-lahev.*, <slug>-etiketa.*
  *
  * Spuštění: npm run images:prepare
@@ -45,6 +45,8 @@ async function main() {
   // Box: otevřený, 13 lahví vedle sebe, zavřený (pořadí v galerii)
   await convert(path.join(SRC, "box", "1-otevreny.jpg"), path.join(OUT, "box", "otevreny"), true);
   await convert(path.join(SRC, "box", "3-zavreny.jpg"), path.join(OUT, "box", "zavreny"), true);
+  // Ztlumené pozadí úvodu na hlavní stránce – původní světlá fotka (tmavá by pod překryvem nebyla vidět)
+  await convert(path.join(SRC, "box", "3-zavreny.jpg"), path.join(OUT, "box", "uvod-pozadi"));
 
   // Hráči: nejdřív lahev, pak etiketa
   const dirs = await fs.readdir(path.join(SRC, "hraci"));
