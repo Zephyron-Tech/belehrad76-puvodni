@@ -78,7 +78,7 @@ export default async function EshopPage() {
               {salesOpen && (
                 <>
                   <AddToCart slug={box.slug} max={Math.min(box.stock ?? 0, settings.num("order.max_boxes"))} />
-                  <p className="mt-2 text-xs text-muted">Pokud chcete dát gól, dejte box do košíku.</p>
+                  <p className="mt-2 text-[0.8125rem] text-muted">Chceš si dát Panenkův dloubák? Dej box do košíku.</p>
                 </>
               )}
             </div>
