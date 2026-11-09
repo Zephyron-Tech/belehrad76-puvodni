@@ -32,7 +32,8 @@ export default async function HomePage() {
         <img src="/img/box/uvod-pozadi.webp" alt="" aria-hidden="true" fetchPriority="low" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/70 to-ink" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1fr_1.1fr] md:py-28">
-          <div>
+          {/* Mobil: nadpis → fotka boxu → objednávka (tlačítka, zbývající boxy) → text; na počítači text před tlačítky */}
+          <div className="flex flex-col">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">{settings.text("home.hero_kicker")}</p>
             <h1 className="mt-4 font-serif text-5xl font-extrabold uppercase leading-[0.95] tracking-wide text-gold sm:text-7xl">
               {settings.str("home.hero_title")}
@@ -55,7 +56,7 @@ export default async function HomePage() {
               .split("\n")
               .filter((line) => line.trim())
               .map((line, i) => (
-                <p key={i} className={`${i === 0 ? "mt-6" : "mt-3"} max-w-xl text-lg text-cream/85`}>
+                <p key={i} className={`${i === 0 ? "mt-6" : "mt-3"} order-last max-w-xl text-lg text-cream/85 md:order-none`}>
                   {line}
                 </p>
               ))}
