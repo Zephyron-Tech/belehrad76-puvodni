@@ -1,14 +1,14 @@
 /**
  * Připraví fotky pro web z roztříděných originálů ve složce foto/:
  *
- *   foto/box/1-otevreny.jpg, 3-zavreny.jpg      (bílé pozadí se nahradí tmavým – scripts/box-backdrop.ts)
+ *   foto/box/1-otevreny.jpg, 3-zavreny.jpg, 4-otevreny-uvod.jpg (pro výřez na úvodní stránce)      (bílé pozadí se nahradí tmavým – scripts/box-backdrop.ts)
  *   foto/hraci/NN-<slug>/1-lahev.jpg, 2-etiketa.jpg      (NN = číslo dresu, slug = Product.slug)
  *
  * Výstup do public/img/ (cesty používá DB – Product.imageUrl a galleryUrls):
  *   - .webp pro web (menší soubory, podporují všechny současné prohlížeče),
  *   - .jpg pro náhled při sdílení (Facebook, Messenger WebP spolehlivě nezobrazí).
  *
- *   public/img/box/otevreny.(webp|jpg), zavreny.*, uvod-pozadi.* (světlá verze pro pozadí úvodu)
+ *   public/img/box/otevreny.(webp|jpg), otevreny-vyrez.(png|webp) (výřez s průhledným pozadím pro úvod), zavreny.*, uvod-pozadi.* (světlá verze pro pozadí úvodu)
  *   public/img/hraci/<slug>-lahev.*, <slug>-etiketa.*
  *
  * Spuštění: npm run images:prepare
@@ -18,6 +18,7 @@ import fs from "node:fs/promises";
 import sharp from "sharp";
 import { PLAYERS } from "../prisma/players";
 import { boxOnBackdrop } from "./box-backdrop";
+import { boxCutout } from "./box-cutout";
 
 const ROOT = path.resolve(__dirname, "..");
 const SRC = path.join(ROOT, "foto");
@@ -45,6 +46,11 @@ async function main() {
   // Box: otevřený, 13 lahví vedle sebe, zavřený (pořadí v galerii)
   await convert(path.join(SRC, "box", "1-otevreny.jpg"), path.join(OUT, "box", "otevreny"), true);
   await convert(path.join(SRC, "box", "3-zavreny.jpg"), path.join(OUT, "box", "zavreny"), true);
+  // Úvodní stránka: otevřený box vyříznutý podle obrysu, průhledné pozadí (PNG + WebP)
+  const cut = await boxCutout(path.join(SRC, "box", "4-otevreny-uvod.jpg"));
+  await fs.writeFile(path.join(OUT, "box", "otevreny-vyrez.png"), await sharp(cut).png({ compressionLevel: 9 }).toBuffer());
+  await sharp(cut).webp({ quality: 85, alphaQuality: 100, effort: 6 }).toFile(path.join(OUT, "box", "otevreny-vyrez.webp"));
+  console.log("box/otevreny-vyrez  png + webp (průhledné pozadí)");
   // Ztlumené pozadí úvodu na hlavní stránce – původní světlá fotka (tmavá by pod překryvem nebyla vidět)
   await convert(path.join(SRC, "box", "3-zavreny.jpg"), path.join(OUT, "box", "uvod-pozadi"));
 

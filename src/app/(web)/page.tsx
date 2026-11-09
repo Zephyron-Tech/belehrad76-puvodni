@@ -31,7 +31,7 @@ export default async function HomePage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/img/box/uvod-pozadi.webp" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/70 to-ink" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1fr_auto] md:py-28">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1fr_1.1fr] md:py-28">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">{settings.text("home.hero_kicker")}</p>
             <h1 className="mt-4 font-serif text-5xl font-extrabold uppercase leading-[0.95] tracking-wide text-gold sm:text-7xl">
@@ -68,7 +68,12 @@ export default async function HomePage() {
               </div>
             )}
           </div>
-          <Seal size={220} className="mx-auto hidden opacity-95 md:block" />
+          {/* Výřez boxu s průhledným pozadím (WebP, záloha PNG) */}
+          <picture>
+            <source srcSet="/img/box/otevreny-vyrez.webp" type="image/webp" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/img/box/otevreny-vyrez.png" alt="Otevřený box Mistři Evropy s 13 lahvemi" className="w-full" fetchPriority="high" />
+          </picture>
         </div>
       </section>
 
