@@ -66,7 +66,7 @@ Bankovní účet pro převod: 303642799/0300. Variabilním symbolem je číslo o
 
 Zboží doručujeme v České republice. Samostatné lahve zasíláme prostřednictvím společnosti Zásilkovna s.r.o. na kupujícím zvolené výdejní místo (výdejní místa s obsluhou, nikoli Z-BOX). Sběratelské boxy doručuje na adresu kupujícího osobně zaměstnanec prodávajícího. Osobní převzetí je možné na adrese Fotbalová asociace České republiky, Diskařská 2431/4, 160 17 Praha 6, pokud je tato možnost nabídnuta v objednávce. Cena dopravy se řídí obsahem objednávky a je zobrazena před jejím odesláním.
 
-Předpokládaná dodací lhůta činí do 8 pracovních dnů od přijetí platby, není-li u konkrétního zboží uvedeno jinak. O případném prodlení kupujícího informujeme; jeho zákonná práva při prodlení zůstávají zachována.
+Rozvoz objednávek začne 1. 12. 2026, po galavečeru. Předpokládaná dodací lhůta činí do 8 pracovních dnů od přijetí platby, nejdříve však od 1. 12. 2026; u objednávek zaplacených před tímto dnem tedy běží až od 1. 12. 2026, není-li u konkrétního zboží uvedeno jinak. O případném prodlení kupujícího informujeme; jeho zákonná práva při prodlení zůstávají zachována.
 
 Zboží obsahující alkohol předáme výhradně osobě starší 18 let. Při výdeji na výdejním místě Zásilkovny, při doručení zaměstnancem prodávajícího i při osobním odběru ověřujeme věk přebírající osoby podle dokladu totožnosti. Bez prokázání plnoletosti zboží nepředáme. Pokud doručení selže, domluvíme další postup; zákonná práva spotřebitele tím nejsou dotčena.
 

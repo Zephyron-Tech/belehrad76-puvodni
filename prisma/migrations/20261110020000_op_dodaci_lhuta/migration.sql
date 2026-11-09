@@ -1,0 +1,3 @@
+-- Obchodní podmínky čl. 4: dodací lhůta 8 pracovních dnů běží nejdříve od 1. 12. 2026 (schváleno 10. 11. 2026)
+UPDATE "Page" SET "body" = REPLACE("body", $t$Předpokládaná dodací lhůta činí do 8 pracovních dnů od přijetí platby, není-li u konkrétního zboží uvedeno jinak.$t$, $t$Rozvoz objednávek začne 1. 12. 2026, po galavečeru. Předpokládaná dodací lhůta činí do 8 pracovních dnů od přijetí platby, nejdříve však od 1. 12. 2026; u objednávek zaplacených před tímto dnem tedy běží až od 1. 12. 2026, není-li u konkrétního zboží uvedeno jinak.$t$), "updatedAt" = NOW()
+WHERE "slug" = 'obchodni-podminky' AND "body" LIKE $t$%Předpokládaná dodací lhůta činí do 8 pracovních dnů od přijetí platby, není-li u konkrétního zboží uvedeno jinak.%$t$;
