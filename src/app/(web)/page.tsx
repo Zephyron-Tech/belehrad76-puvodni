@@ -29,7 +29,7 @@ export default async function HomePage() {
       {/* Úvod */}
       <section id="edice" className="relative scroll-mt-20 overflow-hidden border-b border-line">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/img/box/uvod-pozadi.webp" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+        <img src="/img/box/uvod-pozadi.webp" alt="" aria-hidden="true" fetchPriority="low" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/70 to-ink" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1fr_1.1fr] md:py-28">
           <div>
@@ -40,6 +40,16 @@ export default async function HomePage() {
             <p className="mt-3 font-serif text-2xl tracking-[0.35em] text-cream sm:text-3xl">
               {settings.str("home.hero_subtitle").toUpperCase()}
             </p>
+            {/* Mobil: fotka boxu hned pod nadpisem, text až pod ní (na počítači je fotka vpravo) */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/img/box/otevreny-vyrez.webp"
+              alt="Otevřený box Mistři Evropy s 13 lahvemi"
+              width={1153}
+              height={676}
+              className="mt-8 h-auto w-full md:hidden"
+              fetchPriority="high"
+            />
             {settings
               .text("home.hero_lead")
               .split("\n")
@@ -68,12 +78,16 @@ export default async function HomePage() {
               </div>
             )}
           </div>
-          {/* Výřez boxu s průhledným pozadím (WebP, záloha PNG) */}
-          <picture>
-            <source srcSet="/img/box/otevreny-vyrez.webp" type="image/webp" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/img/box/otevreny-vyrez.png" alt="Otevřený box Mistři Evropy s 13 lahvemi" className="w-full" fetchPriority="high" />
-          </picture>
+          {/* Výřez boxu s průhledným pozadím – hlavní fotka stránky, stahuje se přednostně */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/img/box/otevreny-vyrez.webp"
+            alt="Otevřený box Mistři Evropy s 13 lahvemi"
+            width={1153}
+            height={676}
+            className="hidden h-auto w-full md:block"
+            fetchPriority="high"
+          />
         </div>
       </section>
 
@@ -105,7 +119,7 @@ export default async function HomePage() {
             <Markdown source={story.body} settings={settings} className="mt-6 text-lg" />
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/img/box/zavreny.webp?v=2" alt="Box Mistři Evropy – zavřený box" className="w-full border border-line" />
+          <img src="/img/box/zavreny.webp?v=2" alt="Box Mistři Evropy – zavřený box" loading="lazy" className="w-full border border-line" />
         </section>
       )}
 
@@ -114,7 +128,7 @@ export default async function HomePage() {
         <section className="border-y border-line bg-panel">
           <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 md:grid-cols-2 md:items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={box.imageUrl} alt={`${box.name} – otevřený box s 13 lahvemi`} className="w-full border border-line" />
+            <img src={box.imageUrl} alt={`${box.name} – otevřený box s 13 lahvemi`} loading="lazy" className="w-full border border-line" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Limitovaná edice</p>
               <h2 className="mt-2 font-serif text-3xl font-bold text-cream sm:text-4xl">{box.name}</h2>
