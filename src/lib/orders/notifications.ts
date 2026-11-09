@@ -3,7 +3,7 @@ import { env } from "../env";
 import { getSettings, type Settings } from "../settings";
 import { sendMail } from "../mail/transport";
 import { cancelledMail, orderReceivedMail, ownerPaidMail, paymentConfirmedMail, shippedMail } from "../mail/templates";
-import { paymentConfirmationPdf } from "../pdf";
+import { legalPagePdf, paymentConfirmationPdf } from "../pdf";
 import { qrPng, transferInstructions } from "../bank";
 import { sendMetaPurchase } from "../meta-capi";
 
@@ -66,12 +66,18 @@ export async function sendPaidNotifications(orderId: number, opts: { oversold?: 
 
   await once(orderId, "paymentConfirmationSentAt", async () => {
     const pdf = await paymentConfirmationPdf(order, settings);
+    // Obchodní podmínky v uchovatelné podobě (OP čl. 2 a 8) – pokud stránka existuje
+    const terms = await prisma.page.findUnique({ where: { slug: "obchodni-podminky" } });
+    const termsPdf = terms ? await legalPagePdf(terms.title, terms.body, settings) : null;
     const mail = paymentConfirmedMail(order, settings, { orderUrl: orderLink(order.publicToken) });
     await sendMail({
       to: order.email,
       ...mail,
       replyTo: customerReplyTo(settings),
-      attachments: [{ filename: `potvrzeni-platby-${order.number}.pdf`, content: pdf, contentType: "application/pdf" }],
+      attachments: [
+        { filename: `potvrzeni-platby-${order.number}.pdf`, content: pdf, contentType: "application/pdf" },
+        ...(termsPdf ? [{ filename: "obchodni-podminky.pdf", content: termsPdf, contentType: "application/pdf" }] : []),
+      ],
     });
   }).catch((e) => errors.push(e));
 

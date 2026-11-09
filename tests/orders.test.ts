@@ -178,6 +178,22 @@ describe("objednávky a sklad", () => {
     expect(await boxStock()).toBe(144);
   });
 
+  it("potvrzení přijetí objednávky (po zaplacení) má v příloze obchodní podmínky v PDF", async () => {
+    await prisma.page.create({
+      data: {
+        slug: "obchodni-podminky",
+        title: "Obchodní podmínky",
+        body: ["## 1. Prodávající", "{{seller.name}}, IČO {{seller.ico}}"].join("\n\n"),
+        published: true,
+      },
+    });
+    const order = await createOrder(checkout(), null);
+    sentMailLog.length = 0;
+    await markPaid(order.id, admin);
+    const confirmation = sentMailLog.find((m) => m.to === "jan@example.com");
+    expect(confirmation?.attachments).toEqual([`potvrzeni-platby-${order.number}.pdf`, "obchodni-podminky.pdf"]);
+  });
+
   it("zrušení z administrace: e-mail zákazníkovi jen se zaškrtnutím, jednou; u zaplacené s vrácením peněz", async () => {
     const quiet = await createOrder(checkout(), null);
     sentMailLog.length = 0;

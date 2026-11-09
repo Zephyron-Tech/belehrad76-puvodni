@@ -4,7 +4,7 @@
 
 Limitovaná edice slivovice k 50. výročí vítězství na ME v Bělehradě 1976. Web/e-shop (belehrad76.cz, belehrad1976.cz) slouží k prodeji edice a propagaci na sociálních sítích. Výtěžek edice jde Nadaci fotbalových internacionálů (na webu se neuvádí žádná částka). Implementace a provoz viz `README.md`.
 
-**Prodávající:** Petite Eiffel, s.r.o., IČO 10788433, DIČ CZ10788433, U Tiskárny 616/9, Přívoz, 702 00 Ostrava, jednatel Jan Kukula. V předmětu podnikání má prodej lihovin. Údaje jsou z kurzy.cz (stav z justice.cz k 28. 4. 2026) a před spuštěním je třeba je ověřit ve výpisu z OR a v živnostenském rejstříku.
+**Prodávající:** CATEVIO s.r.o. (dříve Petite Eiffel, s.r.o.), IČO 10788433, telefon +420 724 247 139, DIČ CZ10788433, U Tiskárny 616/9, Přívoz, 702 00 Ostrava, jednatel Jan Kukula. V předmětu podnikání má prodej lihovin. Údaje jsou z kurzy.cz (stav z justice.cz k 28. 4. 2026) a před spuštěním je třeba je ověřit ve výpisu z OR a v živnostenském rejstříku.
 
 **Změny oproti původnímu zadání (potvrzeno):**
 - Edice je jen slivovice, calvados odpadá. Žádný výběr varianty.
@@ -85,7 +85,7 @@ Vzor vzhledu je ve složce `C:\Users\rychl\eshop\foto\`:
 ### 4.3 Po objednávce
 - **Platba proběhla**: stav „zaplaceno“, odečtení skladu, e-mail s potvrzením platby a PDF s informací o zaplacení (objednávka, částka, způsob platby, prodávající, datum). Potvrzení platby se generuje až po úspěšné platbě. Žádná faktura se negeneruje.
 - Okamžitě po vytvoření objednávky přijde e-mail „objednávka přijata“. **GoPay:** bez platebních údajů, podtitulek „Děkujeme za objednávku“ (platí se v bráně, potvrzení platby přijde zvlášť). **Převod:** platební údaje s QR kódem a zvýrazněné upozornění „Pokud jste již zaplatili QR kódem nebo převodem ze stránky objednávky na našem webu, nic dalšího neplaťte – potvrzení vám zašleme, jakmile platbu přijmeme.“ (viz 5b).
-- Provozovatel (Petite Eiffel) dostane e-mail s kompletními údaji o každé zaplacené objednávce (zboží, doprava, adresa nebo osobní převzetí, kontakt, zájem o večer). Podle toho zásilky vyřizuje.
+- Provozovatel (CATEVIO) dostane e-mail s kompletními údaji o každé zaplacené objednávce (zboží, doprava, adresa nebo osobní převzetí, kontakt, zájem o večer). Podle toho zásilky vyřizuje.
 - E-mail o odeslání zásilky (s dopravcem a číslem zásilky) se posílá automaticky při přepnutí objednávky na „odeslaná“ v administraci (viz 4.4).
 - Při zrušení objednávky v administraci odejde zákazníkovi e-mail „Objednávka zrušena“ (zaškrtávátko, výchozí zapnuto): zrušené položky, kontakt; u zaplacené objednávky informace, že částka bude vrácena stejným způsobem, jakým zákazník platil; u nezaplacené výzva ozvat se, pokud platbu mezitím odeslal.
 
@@ -113,7 +113,7 @@ Plnohodnotná administrace (úprava textů, cen, fotek) se nevytváří. Je jen 
 **Platební metody:** platební karta (včetně Apple Pay/Google Pay, pokud brána aktivuje), rychlé bankovní platby (převod) a QR platba, pokud ji GoPay pro obchod zapne. Stav těchto plateb se mění automaticky. K tomu **ruční převod na účet 303642799/0300** s variabilním symbolem = číslo objednávky a QR kódem (SPD formát). Objednávka čeká na platbu a ověřuje se ručně podle bodu 5b.
 
 ### Co musíte zařídit (checklist pro vás)
-1. **Smlouva s GoPay** na firmu Petite Eiffel, s.r.o. (IČO 10788433). Přes web gopay.com vyplnit žádost o e-shopovou bránu.
+1. **Smlouva s GoPay** na firmu CATEVIO s.r.o. (IČO 10788433). Přes web gopay.com vyplnit žádost o e-shopovou bránu.
 2. **Podklady pro GoPay**: výpis z OR, doklad totožnosti jednatele (Jan Kukula), doklad o živnostenském oprávnění (prodej lihovin), číslo bankovního účtu pro výplaty. GoPay může chtít i informace o skutečném majiteli.
 3. **Před žádostí si ověřte u GoPay, že prodej lihovin je pro ně přípustný** a zda mají zvláštní podmínky (typicky 18+ a obchodní podmínky). Alkohol patří k rizikovějším kategoriím, takže bez tohoto potvrzení by brána nemusela jít na ostro.
 4. **Web musí být před schválením veřejně dostupný** (i v testovacím režimu) s obchodními podmínkami, kontakty, cenami, způsoby dopravy a platby, reklamačním řádem a ochranou osobních údajů. GoPay web kontroluje.
@@ -173,7 +173,7 @@ v nastavení `payment.verify_email` (teď rychlikjan52@gmail.com).
 - Obchodní podmínky, ochrana osobních údajů (GDPR), cookies lišta s granulárním souhlasem (analytika a Meta Pixel až po souhlasu), reklamační řád, poučení o odstoupení od smlouvy (14 dnů; u spirituálií je nutné ověřit výjimky).
 - Věková brána 18+ a souhlas v objednávce. Při předání (dopravce nebo FAČR) kontrola věku. **Dopravce zatím není určen. Až bude, ověřit, že přepravu lihovin povoluje a umí ověřit věk.**
 - Označení lahví a texty musí odpovídat legislativě (obsah alkoholu, upozornění). Texty bude dodávat zadavatel.
-- Prodávající je Petite Eiffel, s.r.o. Údaje o ní v patičce a v podmínkách (IČO, DIČ, sídlo, kontakt). Údaje o spotřební dani u lihovin řeší výrobce/dodavatel, ne e-shop.
+- Prodávající je CATEVIO s.r.o. Údaje o ní v patičce a v podmínkách (IČO, DIČ, sídlo, kontakt). Údaje o spotřební dani u lihovin řeší výrobce/dodavatel, ne e-shop.
 - Zabezpečení: HTTPS, rate limiting na formuláře, ochrana proti botům (Turnstile), administrace za přihlášením s 2FA a audit logem, přístup do databáze jen pro oprávněné osoby, platební údaje karet neprocházejí naším serverem (řeší GoPay).
 - Zálohy databáze a obrazů (denně, test obnovy před spuštěním).
 

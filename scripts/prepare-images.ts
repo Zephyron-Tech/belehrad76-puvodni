@@ -1,10 +1,16 @@
 /**
- * Připraví dočasné obrázky z vizualizací ve složce foto/:
- *  - public/img/box.jpg     vizualizace boxu
- *  - public/img/lahve.jpg   řada 13 lahví
- *  - public/img/hraci/*.jpg výřez etikety (portrét + jméno + číslo) pro každou kusovku
+ * Připraví fotky pro web z roztříděných originálů ve složce foto/:
  *
- * Jde o zástupné obrázky, dokud zadavatel nedodá finální fotografie.
+ *   foto/box/1-otevreny.jpg, 2-trinact-lahvi.jpg, 3-zavreny.jpg
+ *   foto/hraci/NN-<slug>/1-lahev.jpg, 2-etiketa.jpg      (NN = číslo dresu, slug = Product.slug)
+ *
+ * Výstup do public/img/ (cesty používá DB – Product.imageUrl a galleryUrls):
+ *   - .webp pro web (menší soubory, podporují všechny současné prohlížeče),
+ *   - .jpg pro náhled při sdílení (Facebook, Messenger WebP spolehlivě nezobrazí).
+ *
+ *   public/img/box/otevreny.(webp|jpg), trinact-lahvi.*, zavreny.*
+ *   public/img/hraci/<slug>-lahev.*, <slug>-etiketa.*
+ *
  * Spuštění: npm run images:prepare
  */
 import path from "node:path";
@@ -13,38 +19,39 @@ import sharp from "sharp";
 import { PLAYERS } from "../prisma/players";
 
 const ROOT = path.resolve(__dirname, "..");
-const SRC_BOX = path.join(ROOT, "foto", "WhatsApp Image 2026-11-01 at 20.00.17.jpeg");
-const SRC_BOTTLES = path.join(ROOT, "foto", "WhatsApp Image 2026-11-01 at 20.00.17 (1).jpeg");
+const SRC = path.join(ROOT, "foto");
 const OUT = path.join(ROOT, "public", "img");
 
-// Fotka lahví má 1280 × 543 px, 13 lahví s roztečí ~91,3 px.
-const FIRST_CENTER_X = 92;
-const PITCH_X = 91.3;
-const LABEL_WIDTH = 88;
-const LABEL_TOP = 258;
-const LABEL_HEIGHT = 150;
+/** Nejdelší strana výstupu – originály jsou menší, takže se jen nezvětšují. */
+const MAX_SIDE = 1600;
+
+async function convert(src: string, outBase: string) {
+  const image = sharp(src).rotate().resize(MAX_SIDE, MAX_SIDE, { fit: "inside", withoutEnlargement: true });
+  await image.clone().webp({ quality: 82, effort: 6 }).toFile(`${outBase}.webp`);
+  await image.clone().jpeg({ quality: 85, mozjpeg: true }).toFile(`${outBase}.jpg`);
+  const meta = await sharp(`${outBase}.webp`).metadata();
+  const [webp, jpg] = await Promise.all([fs.stat(`${outBase}.webp`), fs.stat(`${outBase}.jpg`)]);
+  console.log(
+    `${path.relative(OUT, outBase).replace(/\\/g, "/")}  ${meta.width}×${meta.height}  webp ${Math.round(webp.size / 1024)} kB, jpg ${Math.round(jpg.size / 1024)} kB`,
+  );
+}
 
 async function main() {
+  await fs.mkdir(path.join(OUT, "box"), { recursive: true });
   await fs.mkdir(path.join(OUT, "hraci"), { recursive: true });
 
-  await sharp(SRC_BOX).jpeg({ quality: 88, mozjpeg: true }).toFile(path.join(OUT, "box.jpg"));
-  await sharp(SRC_BOTTLES).jpeg({ quality: 88, mozjpeg: true }).toFile(path.join(OUT, "lahve.jpg"));
+  // Box: otevřený, 13 lahví vedle sebe, zavřený (pořadí v galerii)
+  await convert(path.join(SRC, "box", "1-otevreny.jpg"), path.join(OUT, "box", "otevreny"));
+  await convert(path.join(SRC, "box", "2-trinact-lahvi.jpg"), path.join(OUT, "box", "trinact-lahvi"));
+  await convert(path.join(SRC, "box", "3-zavreny.jpg"), path.join(OUT, "box", "zavreny"));
 
-  for (const [index, player] of PLAYERS.entries()) {
-    const center = Math.round(FIRST_CENTER_X + index * PITCH_X);
-    const file = path.join(OUT, "hraci", `${player.slug}.jpg`);
-    await sharp(SRC_BOTTLES)
-      .extract({
-        left: center - LABEL_WIDTH / 2,
-        top: LABEL_TOP,
-        width: LABEL_WIDTH,
-        height: LABEL_HEIGHT,
-      })
-      .resize({ width: LABEL_WIDTH * 4, kernel: "lanczos3" })
-      .sharpen()
-      .jpeg({ quality: 90, mozjpeg: true })
-      .toFile(file);
-    console.log("✔", path.relative(ROOT, file));
+  // Hráči: nejdřív lahev, pak etiketa
+  const dirs = await fs.readdir(path.join(SRC, "hraci"));
+  for (const player of PLAYERS) {
+    const dir = dirs.find((d) => d.endsWith(`-${player.slug}`));
+    if (!dir) throw new Error(`Chybí fotky hráče ${player.slug} ve foto/hraci/`);
+    await convert(path.join(SRC, "hraci", dir, "1-lahev.jpg"), path.join(OUT, "hraci", `${player.slug}-lahev`));
+    await convert(path.join(SRC, "hraci", dir, "2-etiketa.jpg"), path.join(OUT, "hraci", `${player.slug}-etiketa`));
   }
 }
 

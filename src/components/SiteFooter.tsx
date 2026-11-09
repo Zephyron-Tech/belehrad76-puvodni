@@ -11,7 +11,7 @@ const LEGAL = [
   { href: "/odstoupeni-od-smlouvy", label: "Odstoupení od smlouvy" },
 ];
 
-export function SiteFooter({ settings }: { settings: Settings }) {
+export function SiteFooter({ settings, cookieSettings = false }: { settings: Settings; cookieSettings?: boolean }) {
   return (
     <footer className="mt-24 border-t border-line bg-panel">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-3">
@@ -53,9 +53,11 @@ export function SiteFooter({ settings }: { settings: Settings }) {
                 </Link>
               </li>
             ))}
-            <li>
-              <CookieSettingsLink className="text-muted hover:text-gold-light" />
-            </li>
+            {cookieSettings && (
+              <li>
+                <CookieSettingsLink className="text-muted hover:text-gold-light" />
+              </li>
+            )}
           </ul>
         </nav>
       </div>

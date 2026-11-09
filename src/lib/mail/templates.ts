@@ -264,7 +264,7 @@ export function orderReceivedMail(
   settings: Settings,
   opts: { orderUrl: string; transfer?: TransferInstructions; qrCid?: string },
 ) {
-  const title = `Objednávka ${order.number} přijata`;
+  const title = `Potvrzení doručení objednávky ${order.number}`;
   let payment = "";
   let paymentText = "";
 
@@ -281,9 +281,10 @@ export function orderReceivedMail(
   const html = layout(
     settings,
     title,
-    `${statusBlock("pending", "Objednávka přijata", sub)}
+    `${statusBlock("pending", "Objednávku jsme obdrželi", sub)}
 ${para(`Objednávka č. <span style="color:${C.goldLight};">${esc(order.number)}</span> · ${esc(formatDateTime(order.createdAt))}`, { muted: true, center: true })}
 ${para("Děkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.", { center: true })}
+${para("Toto je automatické potvrzení doručení objednávky. Přijetí objednávky vám potvrdíme samostatným e-mailem po přijetí platby.", { muted: true, center: true })}
 ${alreadyPaid}
 ${sectionTitle("Objednávka")}
 ${itemsTable(order)}
@@ -292,10 +293,10 @@ ${deliveryBlock(order, settings)}
 ${notesBlock(order, settings)}
 ${order.eveningInterest ? para(`Po zaplacení vás zařadíme do losování o vstup na galavečer ${esc(settings.str("evening.date"))}. ${esc(EVENING_ENTRY_NOTE)}`, { muted: true }) : ""}
 `,
-    isTransfer ? `Čeká na úhradu ${formatCzk(order.totalCzk)}.` : `Objednávka ${order.number} přijata.`,
+    isTransfer ? `Čeká na úhradu ${formatCzk(order.totalCzk)}.` : `Objednávku ${order.number} jsme obdrželi.`,
   );
 
-  const text = `OBJEDNÁVKA PŘIJATA${isTransfer ? " – ČEKÁ NA ÚHRADU" : ""}\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\n${isTransfer ? `\nDŮLEŽITÉ: ${ALREADY_PAID_TRANSFER}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
+  const text = `POTVRZENÍ DORUČENÍ OBJEDNÁVKY${isTransfer ? " – ČEKÁ NA ÚHRADU" : ""}\nObjednávka č. ${order.number}\n\nDěkujeme za vaši objednávku z limitované edice Mistři Evropy – Bělehrad 1976.\nToto je automatické potvrzení doručení objednávky. Přijetí objednávky vám potvrdíme samostatným e-mailem po přijetí platby.\n${isTransfer ? `\nDŮLEŽITÉ: ${ALREADY_PAID_TRANSFER}\n` : ""}\n${itemsText(order)}\n\n${paymentText}${order.eveningInterest ? `\nPo zaplacení vás zařadíme do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n` : ""}\nStav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 
@@ -308,7 +309,7 @@ export function paymentConfirmedMail(order: OrderWithItems, settings: Settings, 
     settings,
     title,
     `${statusBlock("paid", "Platba přijata", `Objednávka č. ${order.number}`)}
-${para("Děkujeme. Vaše platba byla přijata a objednávku nyní připravujeme.", { center: true })}
+${para("Děkujeme. Vaše platba byla přijata a potvrzujeme přijetí vaší objednávky – objednávku nyní připravujeme.", { center: true })}
 <tr><td style="padding:30px 40px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel2}" style="background:${C.panel2};border:1px solid ${C.line};border-top:2px solid ${C.gold};"><tr><td style="padding:22px 24px 16px;">
 <div style="font-family:${SANS};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${C.gold};padding-bottom:10px;">Potvrzení o přijetí platby</div>
@@ -324,7 +325,7 @@ ${rows(
     )}
 </td></tr></table>
 </td></tr>
-${para("Potvrzení o zaplacení naleznete v příloze (PDF). Nejedná se o daňový doklad.", { muted: true })}
+${para("V příloze naleznete potvrzení o zaplacení a obchodní podmínky platné pro tuto objednávku (PDF). Potvrzení o zaplacení není daňový doklad.", { muted: true })}
 ${sectionTitle("Předmět platby")}
 ${itemsTable(order)}
 ${deliveryBlock(order, settings)}
@@ -342,7 +343,7 @@ ${button(opts.orderUrl, "Stav objednávky")}`,
     `Přijato ${formatCzk(order.totalCzk)} za objednávku ${order.number}.`,
   );
 
-  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzení o zaplacení naleznete v příloze (PDF). Nejedná se o daňový doklad.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
+  const text = `POTVRZENÍ O PŘIJETÍ PLATBY\n\nČíslo objednávky: ${order.number}\nVariabilní symbol: ${order.number}\nDatum přijetí platby: ${paidAt}\nZpůsob platby: ${PAYMENT_LABEL[order.paymentMethod]}\nPřijatá částka: ${formatCzk(order.totalCzk)}\n\nPotvrzujeme přijetí vaší objednávky. V příloze naleznete potvrzení o zaplacení a obchodní podmínky platné pro tuto objednávku (PDF). Potvrzení o zaplacení není daňový doklad.\n\n${itemsText(order)}\n\n${order.eveningInterest ? `Jste zařazeni do losování o vstup na galavečer. ${EVENING_ENTRY_NOTE}\n\n` : ""}Stav objednávky: ${opts.orderUrl}\n`;
   return { subject: title, html, text };
 }
 

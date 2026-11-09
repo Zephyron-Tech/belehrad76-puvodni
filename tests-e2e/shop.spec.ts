@@ -31,7 +31,9 @@ async function boxStock() {
 async function passGates(page: Page) {
   // Úvodní stránka je bez věkové brány, brána je až při vstupu do e-shopu
   await page.goto("/");
-  await page.getByRole("button", { name: "Jen nezbytné" }).click();
+  // Lišta cookies je jen při nastavené analytice (GA4 / Meta Pixel)
+  const onlyNecessary = page.getByRole("button", { name: "Jen nezbytné" });
+  if (await onlyNecessary.isVisible().catch(() => false)) await onlyNecessary.click();
   await expect(page.getByRole("dialog", { name: /18 let/ })).toBeHidden();
   await page.goto("/eshop");
   await expect(page.getByRole("dialog", { name: /18 let/ })).toBeVisible();

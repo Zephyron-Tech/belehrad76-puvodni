@@ -168,3 +168,87 @@ function wrap(value: string, font: PDFFont, size: number, maxWidth: number): str
   while (s.length > 1 && font.widthOfTextAtSize(`${s}…`, size) > maxWidth) s = s.slice(0, -1);
   return `${s}…`;
 }
+
+/**
+ * PDF s textem stránky (obchodní podmínky) – příloha potvrzení přijetí objednávky, aby kupující měl podmínky
+ * v uchovatelné podobě. Markdown se převádí zjednodušeně: nadpisy (#, ##, ###), odstavce, odrážky, tučné **…**.
+ */
+export async function legalPagePdf(title: string, markdown: string, settings: Settings): Promise<Buffer> {
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const fonts = await loadFonts();
+  const regular = await pdf.embedFont(fonts.regular, { subset: true });
+  const bold = await pdf.embedFont(fonts.bold, { subset: true });
+  pdf.setTitle(title);
+  pdf.setAuthor(settings.str("seller.name"));
+  pdf.setCreator("Mistři Evropy – Bělehrad 1976");
+
+  const left = 50;
+  const width = 495;
+  let page = pdf.addPage([595.28, 841.89]);
+  let y = 790;
+  const newPageIfNeeded = (needed: number) => {
+    if (y - needed < 50) {
+      page = pdf.addPage([595.28, 841.89]);
+      y = 790;
+    }
+  };
+  const lines = (text: string, font: PDFFont, size: number, maxWidth: number) => {
+    const out: string[] = [];
+    for (const para of text.split("\n")) {
+      let line = "";
+      for (const word of para.split(/\s+/).filter(Boolean)) {
+        const next = line ? `${line} ${word}` : word;
+        if (font.widthOfTextAtSize(next, size) > maxWidth && line) {
+          out.push(line);
+          line = word;
+        } else line = next;
+      }
+      out.push(line);
+    }
+    return out;
+  };
+  const block = (text: string, opts: { font?: PDFFont; size?: number; color?: ReturnType<typeof rgb>; indent?: number; gapAfter?: number } = {}) => {
+    const font = opts.font ?? regular;
+    const size = opts.size ?? 10;
+    const indent = opts.indent ?? 0;
+    for (const l of lines(text, font, size, width - indent)) {
+      newPageIfNeeded(size + 4);
+      page.drawText(l, { x: left + indent, y, font, size, color: opts.color ?? INK });
+      y -= size + 4;
+    }
+    y -= opts.gapAfter ?? 6;
+  };
+
+  page.drawText("MISTŘI EVROPY", { x: left, y, font: bold, size: 14, color: GOLD });
+  y -= 30;
+  block(title, { font: bold, size: 16, gapAfter: 10 });
+
+  const clean = (t: string) => t.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[(.+?)\]\((.+?)\)/g, "$1 ($2)").replace(/\\([.#*_-])/g, "$1");
+  for (const raw of settings.interpolate(markdown).split(/\n{2,}/)) {
+    const chunk = raw.trim();
+    if (!chunk || chunk.startsWith(">")) continue; // poznámky (např. „pracovní návrh“) do PDF nepatří
+    const heading = chunk.match(/^(#{1,3})\s+(.*)$/);
+    if (heading) {
+      y -= 4;
+      newPageIfNeeded(30);
+      block(clean(heading[2]), { font: bold, size: heading[1].length === 1 ? 14 : 12, gapAfter: 4 });
+      continue;
+    }
+    // Odstavec může obsahovat i odrážky („Platit lze:\n- kartou\n- převodem“) – text a odrážky zvlášť
+    let text: string[] = [];
+    const flush = () => {
+      if (text.length) block(clean(text.join(" ")), { gapAfter: 2 });
+      text = [];
+    };
+    for (const line of chunk.split("\n")) {
+      if (/^\s*[-*]\s/.test(line)) {
+        flush();
+        block(`• ${clean(line.replace(/^\s*[-*]\s+/, ""))}`, { indent: 8, gapAfter: 2 });
+      } else text.push(line.trim());
+    }
+    flush();
+    y -= 4;
+  }
+  return Buffer.from(await pdf.save());
+}

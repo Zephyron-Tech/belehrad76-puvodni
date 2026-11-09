@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: "Mistři Evropy – Bělehrad 1976",
       title: "Mistři Evropy – Bělehrad 1976",
       description,
-      images: [{ url: "/img/box.jpg", width: 1186, height: 662, alt: "Box Mistři Evropy – Bělehrad 1976" }],
+      images: [{ url: "/img/box/otevreny.jpg", width: 1280, height: 720, alt: "Box Mistři Evropy – Bělehrad 1976" }],
     },
   };
 }
@@ -40,9 +40,10 @@ export default async function WebLayout({ children }: { children: React.ReactNod
       </a>
       <SiteHeader salesOpen={settings.bool("sales.open")} />
       <main id="obsah">{children}</main>
-      <SiteFooter settings={settings} />
+      <SiteFooter settings={settings} cookieSettings={!!(env.ga4Id || env.metaPixelId)} />
       <AgeGate verified={ageVerified} />
-      <CookieConsent ga4Id={env.ga4Id || undefined} metaPixelId={env.metaPixelId || undefined} />
+      {/* Bez Google Analytics / Meta Pixel jsou jen nezbytné cookies – souhlas (lišta) není potřeba */}
+      {(env.ga4Id || env.metaPixelId) && <CookieConsent ga4Id={env.ga4Id || undefined} metaPixelId={env.metaPixelId || undefined} />}
       <ScrollToHash />
     </CartProvider>
   );

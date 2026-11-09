@@ -105,9 +105,6 @@ body {
 }
 
 /* Jemná textura „starého papíru“ pro karty hráčů */
-.label-paper {
-  background: linear-gradient(180deg, #efe6d3 0%, #e5d9c1 100%);
-}
 
 /* --- Panáček s míčem nad boxem v e-shopu (GoalKick.tsx), délka 1.9s ---
  * Klouby: rameno 14/29, loket 14/35, kyčel 14/40, koleno 14/47.5 (souřadnice v SVG).

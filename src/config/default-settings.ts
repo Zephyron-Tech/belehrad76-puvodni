@@ -4,7 +4,7 @@
  */
 export const DEFAULT_SETTINGS: { key: string; value: string; description: string }[] = [
   // Prodávající
-  { key: "seller.name", value: "Petite Eiffel, s.r.o.", description: "Obchodní firma prodávajícího" },
+  { key: "seller.name", value: "CATEVIO s.r.o.", description: "Obchodní firma prodávajícího" },
   { key: "seller.ico", value: "10788433", description: "IČO prodávajícího" },
   { key: "seller.dic", value: "CZ10788433", description: "DIČ prodávajícího" },
   { key: "seller.address", value: "U Tiskárny 616/9, Přívoz, 702 00 Ostrava", description: "Sídlo prodávajícího" },
@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
     value: "jan.kukula@petiteeiffel.cz, petr.safarcik@pam-group.cz",
     description: "Kam jdou odpovědi zákazníků na e-maily z e-shopu (víc adres oddělit čárkou; prázdné = contact.email)",
   },
-  { key: "contact.phone", value: "", description: "Kontaktní telefon na webu (prázdné = nezobrazovat)" },
+  { key: "contact.phone", value: "+420 724 247 139", description: "Kontaktní telefon na webu a v e-mailech (prázdné = nezobrazovat)" },
   {
     key: "owner.notify_email",
     value: "objednavky@belehrad76.cz",
@@ -30,6 +30,9 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
   { key: "social.facebook_url", value: "", description: "Odkaz na Facebook (prázdné = nezobrazovat)" },
   { key: "social.instagram_url", value: "", description: "Odkaz na Instagram (prázdné = nezobrazovat)" },
   { key: "foundation.url", value: "", description: "Odkaz na web Nadace fotbalových internacionálů" },
+  { key: "facr.contact_name", value: "Václav Tichý", description: "Kontaktní osoba za FAČR a Nadaci fotbalových internacionálů (stránka Kontakt; prázdné = skrýt)" },
+  { key: "facr.contact_phone", value: "+420 739 583 562", description: "Telefon kontaktní osoby FAČR a Nadace" },
+  { key: "facr.contact_email", value: "tichy@fotbal.cz", description: "E-mail kontaktní osoby FAČR a Nadace" },
   { key: "facr.url", value: "https://facr.fotbal.cz", description: "Odkaz na web FAČR" },
 
   // Prodej a doprava

@@ -18,7 +18,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.name,
     description: product.shortDescription,
-    openGraph: { title: product.name, description: product.shortDescription, images: [product.imageUrl] },
+    // Náhled při sdílení jako JPEG (Facebook WebP spolehlivě nezobrazí)
+    openGraph: { title: product.name, description: product.shortDescription, images: [product.imageUrl.replace(/\.webp$/, ".jpg")] },
   };
 }
 
@@ -52,11 +53,11 @@ export default async function ProductPage({ params }: Props) {
             <img
               key={src}
               src={src}
-              alt={i === 0 ? product.name : `${product.name} – fotografie ${i + 1}`}
-              className="label-paper mx-auto w-full max-w-sm border border-line"
+              alt={i === 0 ? `Lahev ${product.name}` : `Etiketa – ${product.playerName ?? product.name}`}
+              loading={i === 0 ? "eager" : "lazy"}
+              className="mx-auto w-full max-w-sm border border-line bg-white"
             />
           ))}
-          <p className="text-xs text-muted">Obrázky jsou ilustrační vizualizace.</p>
         </div>
 
         <div>

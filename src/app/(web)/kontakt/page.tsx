@@ -8,6 +8,9 @@ export default async function ContactPage() {
   const settings = await getSettings();
   const email = settings.str("contact.email");
   const phone = settings.str("contact.phone");
+  const facrName = settings.str("facr.contact_name");
+  const facrPhone = settings.str("facr.contact_phone");
+  const facrEmail = settings.str("facr.contact_email");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-14">
@@ -45,6 +48,37 @@ export default async function ContactPage() {
             </a>
           )}
         </section>
+
+        {facrName && (
+          <section className="border border-line bg-panel p-6 md:col-span-2">
+            <h2 className="font-serif text-xl font-bold text-cream">FAČR a Nadace fotbalových internacionálů</h2>
+            <p className="mt-3 text-cream/90">{facrName}</p>
+            {facrPhone && (
+              <p className="mt-1">
+                <a href={`tel:${facrPhone.replace(/\s/g, "")}`} className="text-cream hover:text-gold-light">
+                  {facrPhone}
+                </a>
+              </p>
+            )}
+            {facrEmail && (
+              <p className="mt-1">
+                <a href={`mailto:${facrEmail}`} className="text-gold-light underline underline-offset-4">
+                  {facrEmail}
+                </a>
+              </p>
+            )}
+            {settings.str("foundation.url") && (
+              <a
+                href={settings.str("foundation.url")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-block text-sm text-gold-light underline underline-offset-4"
+              >
+                Web Nadace fotbalových internacionálů
+              </a>
+            )}
+          </section>
+        )}
 
         <section className="border border-line bg-panel p-6 md:col-span-2">
           <h2 className="font-serif text-xl font-bold text-cream">Prodávající</h2>

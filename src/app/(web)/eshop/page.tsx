@@ -31,8 +31,26 @@ export default async function EshopPage() {
 
       {boxes.map((box) => (
         <section key={box.id} className="mt-10 grid gap-8 border border-line bg-panel p-5 md:grid-cols-[1.2fr_1fr] md:p-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={box.imageUrl} alt={`${box.name} – vizualizace`} className="w-full border border-line" />
+          <div className="space-y-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={box.imageUrl} alt={`${box.name} – otevřený box s 13 lahvemi`} className="w-full border border-line" />
+            {box.galleryUrls.filter((u) => u !== box.imageUrl).length > 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                {box.galleryUrls
+                  .filter((u) => u !== box.imageUrl)
+                  .map((src, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={src}
+                      src={src}
+                      alt={i === 0 ? "Třináct lahví edice vedle sebe" : `${box.name} – zavřený box`}
+                      loading="lazy"
+                      className="aspect-[16/9] w-full border border-line bg-white object-contain"
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
           <div className="flex flex-col">
             {/* Nad nadpisem panáček s míčem a branka – po přidání boxu do košíku vstřelí gól */}
             <div className="self-start">

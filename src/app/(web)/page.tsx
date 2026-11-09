@@ -29,7 +29,7 @@ export default async function HomePage() {
       {/* Úvod */}
       <section id="edice" className="relative scroll-mt-20 overflow-hidden border-b border-line">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/img/box.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+        <img src="/img/box/zavreny.webp" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/70 to-ink" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1fr_auto] md:py-28">
           <div>
@@ -100,7 +100,7 @@ export default async function HomePage() {
             <Markdown source={story.body} settings={settings} className="mt-6 text-lg" />
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/img/lahve.jpg" alt="Třináct lahví edice s portréty hráčů" className="w-full border border-line" />
+          <img src="/img/box/trinact-lahvi.webp" alt="Třináct lahví edice s portréty hráčů" className="w-full border border-line bg-white" />
         </section>
       )}
 
@@ -109,7 +109,7 @@ export default async function HomePage() {
         <section className="border-y border-line bg-panel">
           <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 md:grid-cols-2 md:items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={box.imageUrl} alt={`${box.name} – vizualizace`} className="w-full border border-line" />
+            <img src={box.imageUrl} alt={`${box.name} – otevřený box s 13 lahvemi`} className="w-full border border-line" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Limitovaná edice</p>
               <h2 className="mt-2 font-serif text-3xl font-bold text-cream sm:text-4xl">{box.name}</h2>

@@ -12,6 +12,7 @@ export async function resetDb(boxStock = 144) {
   await prisma.order.deleteMany();
   await prisma.product.deleteMany();
   await prisma.setting.deleteMany();
+  await prisma.page.deleteMany();
   await prisma.adminSession.deleteMany();
   await prisma.adminUser.deleteMany();
 

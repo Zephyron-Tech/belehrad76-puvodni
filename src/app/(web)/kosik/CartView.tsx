@@ -46,7 +46,7 @@ export function CartView() {
             <img
               src={line.imageUrl}
               alt=""
-              className={`h-24 w-20 shrink-0 border border-line object-cover ${line.type === "BOTTLE" ? "label-paper" : ""}`}
+              className="h-24 w-20 shrink-0 border border-line bg-white object-cover"
             />
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>

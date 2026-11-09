@@ -31,8 +31,8 @@ async function main() {
       priceCzk: 9880,
       stock: 144,
       madeToOrder: false,
-      imageUrl: "/img/box.jpg",
-      galleryUrls: ["/img/box.jpg", "/img/lahve.jpg"],
+      imageUrl: "/img/box/otevreny.webp",
+      galleryUrls: ["/img/box/otevreny.webp", "/img/box/trinact-lahvi.webp", "/img/box/zavreny.webp"],
       sortOrder: 0,
     },
   });
@@ -59,8 +59,8 @@ async function main() {
         priceCzk: 760,
         stock: null,
         madeToOrder: true,
-        imageUrl: `/img/hraci/${p.slug}.jpg`,
-        galleryUrls: [],
+        imageUrl: `/img/hraci/${p.slug}-lahev.webp`,
+        galleryUrls: [`/img/hraci/${p.slug}-lahev.webp`, `/img/hraci/${p.slug}-etiketa.webp`],
         sortOrder: index + 1,
       },
     });

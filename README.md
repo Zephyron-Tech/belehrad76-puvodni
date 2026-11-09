@@ -76,7 +76,7 @@ Nejdůležitější klíče v `Setting` (úplný seznam s popisy: [`src/config/d
 | `bank.account` | 303642799/0300 | Účet pro platbu převodem a QR |
 | `contact.email`, `contact.phone`, `owner.notify_email` | | **Doplnit skutečné adresy** |
 | `social.facebook_url`, `social.instagram_url`, `foundation.url` | prázdné | Odkazy (prázdné = skryté) |
-| `seller.*` | Petite Eiffel, s.r.o. | Údaje prodávajícího (patička, podmínky, PDF) |
+| `seller.*` | CATEVIO s.r.o. | Údaje prodávajícího (patička, podmínky, PDF) |
 | `home.*`, `evening.date`, `seo.description` | | Texty úvodu |
 
 **Doprava (`src/lib/shipping.ts`):** objednávka s boxem → jen kurýr na adresu (490 Kč). Jen kusovky → jen Zásilkovna
@@ -96,8 +96,9 @@ Do jedné zásilky se vejde 13 lahví (15 kg), víc se rozdělí. Palivový př�
 **Sklad boxů:** `Product.stock` u boxu je počet boxů k prodeji. Snižuje se už při vytvoření objednávky
 (rezervace) a vrací se při zrušení / vypršení. Ruční doplnění = zvýšit `stock`.
 
-**Fotky:** zatím jsou v `public/img` dočasné výřezy z vizualizací ve složce `foto/` (`npm run images:prepare`).
-Finální fotky nahrajte do `public/img/…` (vyžaduje nasazení) nebo na jakoukoli URL a změňte `imageUrl`.
+**Fotky:** originály roztříděné ve `foto/box/` (1-otevreny, 2-trinact-lahvi, 3-zavreny) a `foto/hraci/NN-<slug>/`
+(1-lahev, 2-etiketa). `npm run images:prepare` z nich vyrobí `public/img/**` – WebP pro web a JPEG pro náhled při sdílení.
+Cesty jsou v `Product.imageUrl` / `galleryUrls` (galerie: box otevřený → 13 lahví → zavřený; lahev → etiketa).
 
 ---
 
@@ -198,7 +199,7 @@ docker exec -it belehrad-eshop npm run admin:setup -- --email objednavky@belehra
 - [ ] Právní texty v tabulce `Page` jsou **pracovní návrhy** – nechat zkontrolovat právníkem, odstranit upozornění „Pracovní návrh“
 - [ ] Ověřit údaje prodávajícího (výpis z OR, živnostenský rejstřík – prodej lihovin) a adresu FAČR pro převzetí
 - [ ] Doplnit `contact.email`, `owner.notify_email`, telefon, odkazy na FB/IG a Nadaci, dodací lhůtu kusovek
-- [ ] Nahradit vizualizace finálními fotkami (box na vizualizaci nese nápis „Calvados“ a zkomolená jména)
+- [x] Finální fotky (9. 11. 2026) – originály ve `foto/`, převod `npm run images:prepare` (originály jsou z WhatsAppu, ideálně dodat plné rozlišení)
 - [ ] GoPay: schválení prodeje lihovin, sandbox → produkce, testovací platba a vratka
 - [ ] SMTP pro odesílání e-mailů (+ SPF/DKIM pro doménu odesílatele)
 - [ ] Dopravce (lihoviny, ověření věku 18+)
