@@ -98,7 +98,7 @@ Do jedné zásilky se vejde 13 lahví (15 kg), víc se rozdělí. Palivový př�
 **Sklad boxů:** `Product.stock` u boxu je počet boxů k prodeji. Snižuje se už při vytvoření objednávky
 (rezervace) a vrací se při zrušení / vypršení. Ruční doplnění = zvýšit `stock`.
 
-**Fotky:** originály roztříděné ve `foto/box/` (1-otevreny, 2-trinact-lahvi, 3-zavreny) a `foto/hraci/NN-<slug>/`
+**Fotky:** originály roztříděné ve `foto/box/` (1-otevreny, 3-zavreny – bílé pozadí se při převodu nahradí tmavým) a `foto/hraci/NN-<slug>/`
 (1-lahev, 2-etiketa). `npm run images:prepare` z nich vyrobí `public/img/**` – WebP pro web a JPEG pro náhled při sdílení.
 Cesty jsou v `Product.imageUrl` / `galleryUrls` (galerie: box otevřený → 13 lahví → zavřený; lahev → etiketa).
 

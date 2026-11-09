@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: "Mistři Evropy – Bělehrad 1976",
       title: "Mistři Evropy – Bělehrad 1976",
       description,
-      images: [{ url: "/img/box/otevreny.jpg", width: 1280, height: 720, alt: "Box Mistři Evropy – Bělehrad 1976" }],
+      images: [{ url: "/img/box/otevreny.jpg?v=2", width: 1280, height: 720, alt: "Box Mistři Evropy – Bělehrad 1976" }],
     },
   };
 }

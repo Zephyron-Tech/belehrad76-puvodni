@@ -45,7 +45,7 @@ export default async function EshopPage() {
                       src={src}
                       alt={i === 0 ? "Třináct lahví edice vedle sebe" : `${box.name} – zavřený box`}
                       loading="lazy"
-                      className="aspect-[16/9] w-full border border-line bg-white object-contain"
+                      className="w-full border border-line"
                     />
                   ))}
               </div>

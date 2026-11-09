@@ -29,7 +29,7 @@ export default async function HomePage() {
       {/* Úvod */}
       <section id="edice" className="relative scroll-mt-20 overflow-hidden border-b border-line">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/img/box/zavreny.webp" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+        <img src="/img/box/zavreny.webp?v=2" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/70 to-ink" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1fr_auto] md:py-28">
           <div>
@@ -100,7 +100,7 @@ export default async function HomePage() {
             <Markdown source={story.body} settings={settings} className="mt-6 text-lg" />
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/img/box/trinact-lahvi.webp" alt="Třináct lahví edice s portréty hráčů" className="w-full border border-line bg-white" />
+          <img src="/img/box/zavreny.webp?v=2" alt="Box Mistři Evropy – zavřený box" className="w-full border border-line" />
         </section>
       )}
 
