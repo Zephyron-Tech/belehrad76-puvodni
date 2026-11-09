@@ -66,7 +66,7 @@ export default async function ProductPage({ params }: Props) {
           <p className="mt-3 text-lg text-cream/85">{product.shortDescription}</p>
           <p className="mt-6 font-serif text-4xl font-bold text-gold-light">{formatCzk(product.priceCzk)}</p>
           <p className="mt-1 text-sm text-muted">
-            Cena včetně DPH. {shippingText} Nebo osobní převzetí na FAČR zdarma.
+            Cena včetně DPH. {shippingText} Nebo osobní převzetí na FAČR zdarma. {settings.str("shipping.start_note")}
           </p>
           <div className="mt-4">
             <StockBadge stock={product.stock} />

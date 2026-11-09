@@ -20,7 +20,7 @@ export default async function EshopPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14">
-      <h1 className="font-serif text-4xl font-bold text-gold">E-shop</h1>
+      <h1 className="font-serif text-4xl font-bold text-gold">Limitovaná edice – 152 boxů</h1>
       <p className="mt-3 max-w-2xl text-cream/80">
         Sběratelská edice k 50. výročí zlatého Bělehradu – 13 lahví slivovice za 13 mistrů Evropy. Výtěžek edice jde
         na podporu Nadace fotbalových internacionálů.
@@ -70,7 +70,9 @@ export default async function EshopPage() {
               Doprava {formatCzk(settings.num("shipping.box_czk"))} za celou objednávku. Osobní převzetí v{"\u00a0"}sídle FAČR
               v{"\u00a0"}Praze zdarma.
             </p>
-            <p className="mt-1 text-sm text-muted">{settings.text("box.delivery")}</p>
+            <p className="mt-1 text-sm text-muted">
+              {settings.text("box.delivery")} {settings.str("shipping.start_note")}
+            </p>
             <div className="mt-4">
               <StockBadge stock={box.stock} />
             </div>
@@ -78,7 +80,7 @@ export default async function EshopPage() {
               {salesOpen && (
                 <>
                   <AddToCart slug={box.slug} max={Math.min(box.stock ?? 0, settings.num("order.max_boxes"))} />
-                  <p className="mt-2 text-[0.8125rem] text-muted">Chceš si dát Panenkův dloubák? Dej box do košíku.</p>
+                  <p className="mt-3 text-xl font-semibold text-gold-light sm:text-2xl">Dej box do košíku a dej Panenkův legendární dloubák.</p>
                 </>
               )}
             </div>
@@ -92,7 +94,8 @@ export default async function EshopPage() {
           Vyberte si svého hráče – každá lahev slivovice 50 % nese jeho portrét, jméno a číslo dresu.{" "}
           {settings.text("bottle.lead_time")} Lahve posíláme Zásilkovnou na výdejní místo od{" "}
           {formatCzk(bottleShippingFromCzk(shippingRates(settings)))} za zásilku (podle hmotnosti, s ověřením věku 18+), s boxem
-          v objednávce kurýrem za {formatCzk(settings.num("shipping.box_czk"))} za celou zásilku. Osobní převzetí na FAČR je zdarma.
+          v objednávce kurýrem za {formatCzk(settings.num("shipping.box_czk"))} za celou zásilku. Osobní převzetí na FAČR je zdarma.{" "}
+          {settings.str("shipping.start_note")}
         </p>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {bottles.map((p) => (

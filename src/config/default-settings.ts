@@ -36,6 +36,11 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
   { key: "facr.url", value: "https://facr.fotbal.cz", description: "Odkaz na web FAČR" },
 
   // Prodej a doprava
+  {
+    key: "site.pin",
+    value: "",
+    description: "PIN pro vstup na web před spuštěním (prázdné = web je veřejný, release = vymazat)",
+  },
   { key: "sales.open", value: "true", description: "true = prodej spuštěn, false = košík a objednávky vypnuty" },
   { key: "shipping.box_czk", value: "490", description: "Kurýr na adresu v Kč: objednávka s boxem (jednou, i při více boxech a kusovkách) a kusovky, u kterých by Zásilkovna vyšla dráž" },
   // Zásilkovna – doprava kusovek (objednávka bez boxu) jen na výdejní místo s obsluhou (Z-BOX neumí ověření věku 18+). Ceník Zásilkovny od 1. 11. 2026,

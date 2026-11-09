@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { CartIssue, PricedCart } from "@/lib/cart";
 import { useCart, type CartLine } from "./CartProvider";
 
-export type PricedCartResponse = PricedCart & { salesOpen: boolean; pickupEnabled: boolean; leadTime: string; boxDelivery: string };
+export type PricedCartResponse = PricedCart & { salesOpen: boolean; pickupEnabled: boolean; leadTime: string; boxDelivery: string; startNote: string };
 
 /** Ocení košík na serveru při každé změně (aktuální ceny, sklad a doprava). */
 export function usePricedCart(lines: CartLine[], ready: boolean) {

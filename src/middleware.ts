@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSettings } from "@/lib/settings";
+import { SITE_PIN_COOKIE, isPinExempt, pinToken } from "@/lib/site-pin";
 
 /** Cesty volané službami (GoPay, cron, healthcheck) – bez hesla vývojové verze */
 const BASIC_AUTH_EXEMPT = ["/api/gopay/notify", "/api/cron/", "/api/health"];
@@ -27,12 +29,26 @@ function devBasicAuth(req: NextRequest): NextResponse | null {
 /**
  * - Vývojová verze za heslem (DEV_BASIC_AUTH).
  * - Přesměrování vedlejších domén (např. belehrad1976.cz) na hlavní doménu (PRIMARY_HOST).
+ * - Web za PINem před spuštěním (site.pin) – kromě administrace, API a ověřovacích odkazů.
  * - /admin: bez cookie session rovnou na přihlášení, hlavička noindex.
  *   (Skutečné ověření session probíhá na serveru v requireAdmin / getAdminSession.)
  */
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const denied = devBasicAuth(req);
   if (denied) return denied;
+
+  // Web za PINem před spuštěním (nastavení site.pin; prázdné = veřejný web)
+  if (!isPinExempt(req.nextUrl.pathname)) {
+    const pin = (await getSettings()).str("site.pin").trim();
+    if (pin && req.cookies.get(SITE_PIN_COOKIE)?.value !== pinToken(pin)) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/pin";
+      url.search = `?next=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`;
+      const res = NextResponse.redirect(url);
+      res.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return res;
+    }
+  }
 
   const primary = (process.env.PRIMARY_HOST ?? "").trim().toLowerCase();
   const host = (req.headers.get("host") ?? "").toLowerCase().split(":")[0];

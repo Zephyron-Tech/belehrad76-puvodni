@@ -121,6 +121,7 @@ export function CartView() {
 
       {data.boxes > 0 && <p className="mt-6 border-l-2 border-gold pl-3 text-sm text-cream/85">{data.boxDelivery}</p>}
       {data.hasMadeToOrder && <p className="mt-3 border-l-2 border-gold pl-3 text-sm text-cream/85">{data.leadTime}</p>}
+      {data.startNote && <p className="mt-3 border-l-2 border-gold pl-3 text-sm text-cream/85">{data.startNote}</p>}
 
       <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         <Link href="/eshop" className="border border-line px-6 py-3 text-center text-cream hover:border-gold">
