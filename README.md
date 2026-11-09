@@ -207,3 +207,33 @@ docker exec -it belehrad-eshop npm run admin:setup -- --email objednavky@belehra
 - [ ] Dopravce (lihoviny, ověření věku 18+)
 - [ ] Účetní: potvrzení o zaplacení není daňový doklad – ověřit, zda stačí (prodávající je plátce DPH)
 - [ ] GA4 / Meta Pixel ID, Turnstile klíče, DNS domén, test obnovy zálohy
+
+## Vyhledatelnost (SEO) – nápady na později
+
+Stav: web má titulky, popis, náhledy pro sdílení (Open Graph), `sitemap.xml`, `robots.txt`, HTTPS a jednu hlavní
+adresu (www → belehrad76.cz). **Dokud je web za PINem, Google ho neindexuje** – vše níže má smysl až po spuštění.
+
+**Technika (v kódu)**
+- Strukturovaná data schema.org: *Product* u boxu a lahví (cena, dostupnost, značka), *Organization* u prodávajícího.
+- Kanonické adresy (`alternates.canonical`, `metadataBase`) – bez duplicit s parametry (`?v=2`, UTM).
+- Lepší titulky a popisy: e-shop má jen „E-shop“ bez popisu; např. „Box Mistři Evropy 1976 – limitovaná edice
+  slivovice | 152 boxů“, u lahví „Slivovice Antonín Panenka – lahev s portrétem mistra Evropy 1976“.
+- Rychlost: úvodní stránka se počítá při každé návštěvě – krátké cachování hotových stránek.
+
+**Obsah**
+- Klíčová slova do nadpisů a textů: Mistři Evropy 1976, Bělehrad 1976, Panenkův dloubák, Antonín Panenka,
+  dárek pro fotbalového fanouška, sběratelská edice, slivovice dárek.
+- Ke každé lahvi 2–3 věty o hráči (kdo byl, jak hrál ve finále) – stránku pak najde i ten, kdo hledá hráče.
+- Samostatný text o finále 1976 (Panenkova penalta, sestava, výsledek) – na takový obsah se odkazují jiné weby.
+- Udržovat popisy obrázků (alt) při změnách fotek.
+
+**Mimo web**
+- Google Search Console a Bing Webmaster Tools: ověřit doménu přes DNS (WEDOS), odeslat `sitemap.xml`.
+- Odkazy z jiných webů: fotbal.cz (FAČR), Nadace fotbalových internacionálů, kluby hráčů (Bohemians, Slovan
+  Bratislava, Dukla…), sportovní a regionální média; tisková zpráva ke spuštění a ke galavečeru.
+- Sociální sítě s odkazem na web, příspěvky ke každému hráči.
+- Slovenské publikum (Ondruš, Masný, Pivarník, Móder, Čapkovič, Jurkemik, Gögh…) – slovenská média a weby.
+
+**Pozor**
+- Placená reklama na alkohol (Google Ads, Meta) má přísná pravidla – cílení jen na dospělé, často schválení.
+- Ověření věku 18+ na webu nechává obsah stránek pro vyhledávače čitelný (je to v pořádku).
