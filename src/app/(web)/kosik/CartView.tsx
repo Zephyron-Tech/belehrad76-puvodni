@@ -131,7 +131,7 @@ export function CartView() {
             K objednávce
           </Link>
         ) : (
-          <p className="text-sm text-muted">Prodej zatím není spuštěn.</p>
+          <p className="text-sm text-muted">E-shop bude brzy spuštěn.</p>
         )}
       </div>
     </div>

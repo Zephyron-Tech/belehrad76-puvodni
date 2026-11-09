@@ -83,7 +83,7 @@ export function CheckoutForm(props: Props) {
       </div>
     );
   }
-  if (!data.salesOpen) return <p className="mt-8 text-muted">Prodej zatím není spuštěn.</p>;
+  if (!data.salesOpen) return <p className="mt-8 text-muted">E-shop bude brzy spuštěn.</p>;
 
   const err = (key: string) =>
     fieldErrors[key] ? (

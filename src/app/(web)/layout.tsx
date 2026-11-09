@@ -39,6 +39,11 @@ export default async function WebLayout({ children }: { children: React.ReactNod
         Přeskočit na obsah
       </a>
       <SiteHeader salesOpen={settings.bool("sales.open")} />
+      {!settings.bool("sales.open") && (
+        <p className="border-b border-gold/40 bg-gold/10 px-4 py-2.5 text-center text-sm font-semibold tracking-wide text-gold-light">
+          E-shop bude brzy spuštěn. Děkujeme za trpělivost.
+        </p>
+      )}
       <main id="obsah">{children}</main>
       <SiteFooter settings={settings} cookieSettings={!!(env.ga4Id || env.metaPixelId)} />
       <AgeGate verified={ageVerified} />

@@ -26,7 +26,7 @@ export default async function EshopPage() {
         na podporu Nadace fotbalových internacionálů.
       </p>
       {!salesOpen && (
-        <p className="mt-6 border border-warn/60 bg-warn/10 p-4 text-cream">Prodej bude brzy spuštěn. Děkujeme za trpělivost.</p>
+        <p className="mt-6 border border-warn/60 bg-warn/10 p-4 text-cream">E-shop bude brzy spuštěn. Děkujeme za trpělivost.</p>
       )}
 
       {boxes.map((box) => (

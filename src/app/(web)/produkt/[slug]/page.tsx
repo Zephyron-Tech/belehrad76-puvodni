@@ -79,7 +79,7 @@ export default async function ProductPage({ params }: Props) {
             {salesOpen ? (
               <AddToCart slug={product.slug} max={max} />
             ) : (
-              <p className="border border-line p-3 text-sm text-muted">Prodej bude brzy spuštěn.</p>
+              <p className="border border-line p-3 text-sm text-muted">E-shop bude brzy spuštěn.</p>
             )}
           </div>
 
