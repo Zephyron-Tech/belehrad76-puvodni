@@ -59,8 +59,8 @@ async function main() {
         priceCzk: 760,
         stock: null,
         madeToOrder: true,
-        imageUrl: `/img/hraci/${p.slug}-lahev.webp`,
-        galleryUrls: [`/img/hraci/${p.slug}-lahev.webp`, `/img/hraci/${p.slug}-etiketa.webp`],
+        imageUrl: `/img/hraci/${p.slug}-lahev.webp?v=2`,
+        galleryUrls: [`/img/hraci/${p.slug}-lahev.webp?v=2`, `/img/hraci/${p.slug}-etiketa.webp`],
         sortOrder: index + 1,
       },
     });
