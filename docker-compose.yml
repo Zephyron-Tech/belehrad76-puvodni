@@ -61,7 +61,9 @@ services:
     networks:
       - internal
 
-  # Denní záloha databáze, uchovává se 14 dní (./backups). Zálohy kopírujte i mimo server.
+  # Záloha databáze každé 2 hodiny v sudou hodinu (0:00, 2:00, …), na serveru se drží 14 dní (./backups).
+  # Každá záloha se zkontroluje (musí obsahovat tabulky objednávek a produktů). Nepovedená se nemaže,
+  # jen přejmenuje na .chyba (pro kontrolu). Kopie mimo server: rychlik si je stahuje (scripts/backup-pull.sh).
   backup:
     image: postgres:17-alpine
     container_name: belehrad-backup
@@ -78,10 +80,15 @@ services:
     command:
       - |
         while true; do
+          now=$$(date +%s)
+          sleep $$(( 7200 - now % 7200 + 60 ))
           f=/backups/eshop-$$(date +%Y%m%d-%H%M).sql.gz
-          pg_dump -h db -U eshop eshop | gzip > "$$f" && echo "zaloha $$f" || echo "zaloha selhala"
+          if pg_dump -h db -U eshop eshop | gzip > "$$f.tmp"             && zcat "$$f.tmp" | grep -q 'COPY public."Order"'             && zcat "$$f.tmp" | grep -q 'COPY public."Product"'; then
+            mv "$$f.tmp" "$$f" && echo "zaloha OK $$f $$(wc -c < "$$f") B"
+          else
+            mv "$$f.tmp" "$$f.chyba" 2>/dev/null; echo "CHYBA: zaloha selhala nebo je neuplna: $$f.chyba"
+          fi
           find /backups -name 'eshop-*.sql.gz' -mtime +14 -delete
-          sleep 86400
         done
     mem_limit: 64m
     networks:
