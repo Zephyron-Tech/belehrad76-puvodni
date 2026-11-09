@@ -32,7 +32,7 @@ async function main() {
       stock: 144,
       madeToOrder: false,
       imageUrl: "/img/box/otevreny.webp?v=2",
-      galleryUrls: ["/img/box/otevreny.webp?v=2", "/img/box/zavreny.webp?v=2"],
+      galleryUrls: ["/img/box/otevreny.webp?v=2"],
       sortOrder: 0,
     },
   });

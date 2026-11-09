@@ -80,7 +80,7 @@ export default async function EshopPage() {
               {salesOpen && (
                 <>
                   <AddToCart slug={box.slug} max={Math.min(box.stock ?? 0, settings.num("order.max_boxes"))} />
-                  <p className="mt-3 text-xl font-semibold text-gold-light sm:text-2xl">Dej box do košíku a dej Panenkův legendární dloubák.</p>
+                  <p className="mt-3 text-xl font-semibold text-gold-light sm:text-2xl">Dej box do košíku a kopni Panenkův legendární dloubák.</p>
                 </>
               )}
             </div>
