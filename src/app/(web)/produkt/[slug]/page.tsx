@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: product.name,
     description: product.shortDescription,
     // Náhled při sdílení jako JPEG (Facebook WebP spolehlivě nezobrazí)
-    openGraph: { title: product.name, description: product.shortDescription, images: [product.imageUrl.replace(/\.webp$/, ".jpg")] },
+    openGraph: { title: product.name, description: product.shortDescription, images: [product.imageUrl.replace(/\.webp(\?|$)/, ".jpg$1")] },
   };
 }
 
