@@ -28,7 +28,7 @@ K padesátému výročí tohoto slavného vítězství vznikla pod vedením mist
     slug: "vecer",
     title: "Galavečer 30. 11. 2026",
     published: false,
-    body: `Edici představíme na galavečeru s hráči vítězného týmu. Začínáme ve 20:15 v salonku Trezor restaurace Červený Jelen v Praze, večerem provede Jakub Kohák. Pozvání přijalo 8 hráčů finálového utkání, Ivo Viktor, Karol Dobiáš, Antonín Panenka, Zdeněk Nehoda, Jozef Čapkovič, Ján Pivarník, Laco Jurkemik a Ján Švehlík.
+    body: `Edici představíme na galavečeru s hráči vítězného týmu. Začínáme ve 20:15 v salonku Trezor restaurace Červený Jelen v Praze, večerem provede Jakub Kohák. Pozvání přijalo 8 hráčů finálového utkání, Ivo Viktor, Karol Dobiáš, Antonín Panenka, Zdeněk Nehoda, Jozef Čapkovič, Ján Pivarník, Ladislav Jurkemik a Ján Švehlík.
 
 Objednejte si box v předprodeji a při objednávce zaškrtněte zájem o účast. Zařadíme vás do losování o vstup na galavečer. Každý jeden zakoupený box dává šanci na vstup pro jednu osobu. Výsledky losování oznámíme do 25.11.2026.`,
   },

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSettings } from "@/lib/settings";
-import { SITE_PIN_COOKIE, isPinExempt, pinToken } from "@/lib/site-pin";
+import { SITE_PIN_COOKIE, effectivePin, isPinExempt, pinToken } from "@/lib/site-pin";
 
 /** Cesty volané službami (GoPay, cron, healthcheck) – bez hesla vývojové verze */
 const BASIC_AUTH_EXEMPT = ["/api/gopay/notify", "/api/cron/", "/api/health"];
@@ -50,7 +50,7 @@ export async function middleware(req: NextRequest) {
 
   // Web za PINem před spuštěním (nastavení site.pin; prázdné = veřejný web)
   if (!isPinExempt(req.nextUrl.pathname)) {
-    const pin = (await getSettings()).str("site.pin").trim();
+    const pin = effectivePin((await getSettings()).str("site.pin"));
     if (pin && req.cookies.get(SITE_PIN_COOKIE)?.value !== pinToken(pin)) {
       const url = req.nextUrl.clone();
       url.pathname = "/pin";

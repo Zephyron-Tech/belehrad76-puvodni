@@ -36,6 +36,11 @@ function getTransporter() {
 }
 
 export async function sendMail(mail: OutgoingMail) {
+  // Vypnuté odesílání (SENDING_EMAILS=false): e-mail se jen zaloguje, nikam neodejde
+  if (!env.sendingEmails) {
+    console.log(`[mail] (SENDING_EMAILS=false, neodesláno) ${mail.subject} → ${mail.to}${mail.cc ? ` (kopie ${mail.cc})` : ""}`);
+    return;
+  }
   const info = await getTransporter().sendMail({
     from: env.mailFrom,
     to: mail.to,

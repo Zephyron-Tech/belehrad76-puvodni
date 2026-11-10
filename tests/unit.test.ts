@@ -197,3 +197,52 @@ describe("česká typografie", () => {
   });
 });
 
+
+describe("SENDING_EMAILS", () => {
+  it("false = žádný e-mail neodejde, bez nastavení se posílá", async () => {
+    const { sendMail, sentMailLog } = await import("@/lib/mail/transport");
+    const { env } = await import("@/lib/env");
+    const before = sentMailLog.length;
+    process.env.SENDING_EMAILS = "false";
+    try {
+      expect(env.sendingEmails).toBe(false);
+      await sendMail({ to: "test@example.com", subject: "Vypnuto", html: "<p>x</p>", text: "x" });
+      expect(sentMailLog.length).toBe(before);
+    } finally {
+      delete process.env.SENDING_EMAILS;
+    }
+    expect(env.sendingEmails).toBe(true);
+  });
+});
+
+describe("SITE_PIN", () => {
+  it("prostředí přebije PIN z databáze, off = veřejný web", async () => {
+    const { effectivePin } = await import("@/lib/site-pin");
+    try {
+      expect(effectivePin(" 4846 ")).toBe("4846");
+      expect(effectivePin("")).toBe("");
+      process.env.SITE_PIN = "1111";
+      expect(effectivePin("4846")).toBe("1111");
+      expect(effectivePin("")).toBe("1111");
+      process.env.SITE_PIN = "off";
+      expect(effectivePin("4846")).toBe("");
+    } finally {
+      delete process.env.SITE_PIN;
+    }
+  });
+});
+
+describe("PIN místo autentikátoru", () => {
+  it("jen když je PIN v SITE_PIN", async () => {
+    const { adminPinFor2fa } = await import("@/lib/site-pin");
+    try {
+      expect(adminPinFor2fa()).toBe("");
+      process.env.SITE_PIN = "4846";
+      expect(adminPinFor2fa()).toBe("4846");
+      process.env.SITE_PIN = "off";
+      expect(adminPinFor2fa()).toBe("");
+    } finally {
+      delete process.env.SITE_PIN;
+    }
+  });
+});

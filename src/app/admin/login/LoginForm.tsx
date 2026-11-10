@@ -29,7 +29,7 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey?: string }) {
           name="code"
           inputMode="numeric"
           autoComplete="one-time-code"
-          pattern="[0-9 ]{6,7}"
+          pattern="[0-9 ]{4,8}"
           required
           placeholder="123456"
           className={inputCls}

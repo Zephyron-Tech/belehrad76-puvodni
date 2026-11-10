@@ -11,6 +11,7 @@ import { prisma } from "./db";
 import { env } from "./env";
 import { audit } from "./audit";
 import { rateLimit } from "./rate-limit";
+import { adminPinFor2fa, pinMatches } from "./site-pin";
 
 export const SESSION_COOKIE = "admin_session";
 /** Odhlášení po nečinnosti */
@@ -67,7 +68,10 @@ export async function login(input: { email: string; password: string; code: stri
   }
 
   const passwordOk = await bcrypt.compare(input.password, user.passwordHash);
-  const codeOk = passwordOk && verifyTotp(input.code, user.totpSecret);
+  // Testovací nasazení (SITE_PIN): místo kódu z autentikátoru stačí PIN webu
+  const testPin = adminPinFor2fa();
+  const codeOk =
+    passwordOk && (verifyTotp(input.code, user.totpSecret) || (testPin !== "" && pinMatches(input.code.trim(), testPin)));
 
   if (!passwordOk || !codeOk) {
     const failed = user.failedAttempts + 1;

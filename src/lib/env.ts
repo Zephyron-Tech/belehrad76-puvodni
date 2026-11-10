@@ -56,6 +56,14 @@ export const env = {
       secure: read("SMTP_SECURE") === "true",
     };
   },
+  /** SENDING_EMAILS=false vypne odesílání všech e-mailů (např. testování na Vercelu); bez nastavení = true. */
+  get sendingEmails() {
+    return !/^(false|0|no|off)$/i.test(read("SENDING_EMAILS", "true"));
+  },
+  /** PIN webu nastavený prostředím (přebije site.pin z databáze); „off“ = bez PINu. Viz effectivePin. */
+  get sitePin() {
+    return read("SITE_PIN");
+  },
   get mailFrom() {
     return read("MAIL_FROM", "Mistři Evropy 1976 <info@belehrad76.cz>");
   },
