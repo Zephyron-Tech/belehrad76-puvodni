@@ -18,8 +18,8 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
   { key: "contact.email", value: "info@belehrad76.cz", description: "Kontaktní e-mail na webu (DOPLNIT skutečný)" },
   {
     key: "mail.reply_to",
-    value: "jan.kukula@petiteeiffel.cz, petr.safarcik@pam-group.cz",
-    description: "Kam jdou odpovědi zákazníků na e-maily z e-shopu (víc adres oddělit čárkou; prázdné = contact.email)",
+    value: "info@belehrad76.cz",
+    description: "Kam jdou odpovědi na všechny e-maily z e-shopu (víc adres oddělit čárkou; prázdné = contact.email)",
   },
   { key: "contact.phone", value: "+420 724 247 139", description: "Kontaktní telefon na webu a v e-mailech (prázdné = nezobrazovat)" },
   {
@@ -129,6 +129,6 @@ export const DEFAULT_SETTINGS: { key: string; value: string; description: string
     description: "Úvodní odstavec (nový řádek = nový odstavec)",
   },
   { key: "evening.date", value: "30. 11. 2026", description: "Datum galavečera" },
-  { key: "shipping.start_note", value: "Rozvoz objednávek začne až 1. 12. 2026, po galavečeru.", description: "Kdy začne rozvoz objednávek – pokladna, stránka objednávky a e-maily (prázdné = nezobrazovat)" },
+  { key: "shipping.start_note", value: "Distribuce od 1. 12. 2026.", description: "Kdy začne rozvoz objednávek – pokladna, stránka objednávky a e-maily (prázdné = nezobrazovat)" },
   { key: "seo.description", value: "Limitovaná edice slivovice Mistři Evropy – Bělehrad 1976. 152 sběratelských boxů, 13 hráčů, 1 976 lahví. Výtěžek edice jde na podporu Nadace fotbalových internacionálů.", description: "Popis webu pro vyhledávače a sdílení" },
 ];

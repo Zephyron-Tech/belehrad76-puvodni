@@ -77,7 +77,7 @@ export async function sendVerifyMail(orderId: number, opts: { repeat?: boolean; 
     },
     adminUrl: `${env.appUrl}/admin/objednavky/${order.id}`,
   });
-  await sendMail({ to, cc: settings.str("payment.verify_cc").trim() || undefined, ...mail, replyTo: order.email });
+  await sendMail({ to, cc: settings.str("payment.verify_cc").trim() || undefined, ...mail, replyTo: customerReplyTo(settings) });
   await prisma.order.update({ where: { id: order.id }, data: { verifyMailSentAt: opts.now ?? new Date() } });
   return true;
 }

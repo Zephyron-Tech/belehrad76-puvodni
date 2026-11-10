@@ -102,8 +102,8 @@ describe("platba převodem s ověřováním e-mailem (SPECIFIKACE 5b)", () => {
     expect(gm.html).not.toContain("Čeká na úhradu");
     expect(gm.html).not.toContain("Variabilní symbol");
     expect(gm.html).toContain("Děkujeme za objednávku");
-    expect(gm.html).toContain("Rozvoz objednávek začne až 1. 12. 2026, po galavečeru.");
-    expect(gm.text).toContain("Rozvoz objednávek začne až 1. 12. 2026, po galavečeru.");
+    expect(gm.html).toContain("Distribuce od 1. 12. 2026.");
+    expect(gm.text).toContain("Distribuce od 1. 12. 2026.");
 
     const transfer = await transferOrder();
     const t = await prisma.order.findUniqueOrThrow({ where: { id: transfer.id }, include: { items: true } });

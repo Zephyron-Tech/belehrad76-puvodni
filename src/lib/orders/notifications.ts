@@ -28,7 +28,7 @@ async function once(orderId: number, field: ClaimField, action: () => Promise<un
   }
 }
 
-/** Kam odpovídá zákazník: mail.reply_to (může být víc adres oddělených čárkou), jinak contact.email. */
+/** Kam jdou odpovědi na všechny e-maily z e-shopu (zákazníci, provozovatel, ověřovatelé): mail.reply_to (může být víc adres oddělených čárkou), jinak contact.email. */
 export function customerReplyTo(settings: Settings) {
   return settings.str("mail.reply_to").trim() || settings.str("contact.email") || undefined;
 }
@@ -88,7 +88,7 @@ export async function sendPaidNotifications(orderId: number, opts: { oversold?: 
         adminUrl: `${env.appUrl}/admin/objednavky/${order.id}`,
         oversold: !!opts.oversold,
       });
-      await sendMail({ to: ownerEmail, ...mail, replyTo: order.email });
+      await sendMail({ to: ownerEmail, ...mail, replyTo: customerReplyTo(settings) });
     }).catch((e) => errors.push(e));
   }
 
