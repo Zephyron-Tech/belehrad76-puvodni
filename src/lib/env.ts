@@ -90,6 +90,17 @@ export const env = {
   get turnstileSecretKey() {
     return read("TURNSTILE_SECRET_KEY");
   },
+  /**
+   * Pojistka čísla účtu pro platby převodem (mimo databázi): platební údaje a QR kód se vydají jen tehdy,
+   * když nastavení bank.account v databázi odpovídá tomuto účtu. Změna účtu = změnit i tuto proměnnou.
+   */
+  get bankAccountLock() {
+    return read("BANK_ACCOUNT_LOCK", "303642799/0300");
+  },
+  /** Kam poslat bezpečnostní upozornění (např. nesouhlasí číslo účtu); víc adres oddělit čárkou. */
+  get securityAlertEmail() {
+    return read("SECURITY_ALERT_EMAIL", "rychlikjan52@gmail.com, info@belehrad76.cz");
+  },
   get ga4Id() {
     return read("GA4_MEASUREMENT_ID");
   },

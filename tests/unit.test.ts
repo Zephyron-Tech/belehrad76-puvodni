@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { packetaQuote, shippingOptions } from "@/lib/shipping";
 import { shippingRates } from "@/lib/catalog";
-import { buildSpd, czechAccountToIban, isValidIban } from "@/lib/bank";
+import jsQR from "jsqr";
+import { PNG } from "pngjs";
+import { BankAccountMismatchError, assertBankAccount, buildSpd, czechAccountToIban, isValidIban, qrPng, transferInstructions } from "@/lib/bank";
 import { priceCart, type CatalogProduct } from "@/lib/cart";
 import { toCsv } from "@/lib/csv";
 import { Settings } from "@/lib/settings";
@@ -51,6 +53,24 @@ describe("Zásilkovna – výdejní místo / Z-BOX", () => {
 });
 
 describe("bankovní účet a QR platba", () => {
+  it("QR kód po přečtení obsahuje přesně účet e-shopu, částku a variabilní symbol", async () => {
+    const t = transferInstructions("303642799/0300", 10370, "2600001", "CATEVIO s.r.o.");
+    const png = PNG.sync.read(await qrPng(t.spd));
+    const decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
+    expect(decoded?.data).toBe(t.spd);
+    expect(decoded?.data).toContain("ACC:CZ8503000000000303642799*");
+    expect(decoded?.data).toContain("AM:10370.00*");
+    expect(decoded?.data).toContain("X-VS:2600001");
+  });
+
+  it("pojistka čísla účtu: jiný účet než BANK_ACCOUNT_LOCK se zablokuje (žádné platební údaje ani QR)", () => {
+    expect(() => assertBankAccount("303642799/0300")).not.toThrow();
+    expect(() => assertBankAccount("303 642 799/0300")).not.toThrow();
+    expect(() => assertBankAccount("19-2000145399/0800")).toThrow(BankAccountMismatchError);
+    expect(() => assertBankAccount("nesmysl")).toThrow(BankAccountMismatchError);
+    expect(() => transferInstructions("19-2000145399/0800", 760, "2600002", "Útočník")).toThrow(BankAccountMismatchError);
+  });
+
   it("převod čísla účtu na IBAN (vzor ČNB)", () => {
     expect(czechAccountToIban("19-2000145399/0800")).toBe("CZ6508000000192000145399");
   });

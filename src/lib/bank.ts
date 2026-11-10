@@ -1,4 +1,5 @@
 import QRCode from "qrcode";
+import { env } from "./env";
 
 /**
  * Převod českého čísla účtu („předčíslí-číslo/kód banky“) na IBAN.
@@ -75,21 +76,67 @@ export type TransferInstructions = {
   spd: string;
 };
 
+/** Číslo účtu v databázi nesouhlasí s pojistkou – platební údaje ani QR kód se nevydají. */
+export class BankAccountMismatchError extends Error {
+  constructor(account: string) {
+    super(`Číslo účtu pro platby (${account}) nesouhlasí s pojistkou BANK_ACCOUNT_LOCK – platební údaje zablokovány.`);
+    this.name = "BankAccountMismatchError";
+  }
+}
+
+/** Upozornění e-mailem při každém nesouhlasu čísla účtu – možné napadení databáze. */
+function alertMismatch(account: string) {
+  console.error(`[BEZPEČNOST] bank.account „${account}“ ≠ pojistka „${env.bankAccountLock}“ – platební údaje zablokovány`);
+  // Dynamický import: bank.ts používají i e-mailové šablony, transport se načte až při upozornění
+  import("./mail/transport")
+    .then(({ sendMail }) =>
+      sendMail({
+        to: env.securityAlertEmail,
+        subject: "BEZPEČNOST: číslo účtu pro platby nesouhlasí – platby převodem zablokovány",
+        text: [
+          `V nastavení e-shopu (bank.account) je účet: ${account}`,
+          `Pojistka na serveru (BANK_ACCOUNT_LOCK) je: ${env.bankAccountLock}`,
+          "",
+          "E-shop proto nezobrazuje platební údaje ani QR kód a nepřijímá objednávky s platbou převodem.",
+          "Pokud jste účet neměnili, mohlo dojít k napadení databáze – prověřte to.",
+          "Pokud se účet mění záměrně, upravte i proměnnou BANK_ACCOUNT_LOCK na serveru a restartujte aplikaci.",
+        ].join("\n"),
+        html: `<p>V nastavení e-shopu (bank.account) je účet <b>${account.replace(/[<>&]/g, "")}</b>, pojistka na serveru je <b>${env.bankAccountLock}</b>.</p><p>Platby převodem jsou zablokované. Pokud jste účet neměnili, prověřte možné napadení databáze.</p>`,
+      }),
+    )
+    .catch((e) => console.error("[BEZPEČNOST] upozornění se nepodařilo odeslat", e));
+}
+
+/** Ověří, že účet z databáze odpovídá pojistce (porovnává se IBAN). Jinak upozorní a vyhodí chybu. */
+export function assertBankAccount(account: string) {
+  let ok = false;
+  try {
+    ok = czechAccountToIban(account) === czechAccountToIban(env.bankAccountLock);
+  } catch {
+    ok = false;
+  }
+  if (!ok) {
+    alertMismatch(account);
+    throw new BankAccountMismatchError(account);
+  }
+}
+
 export function transferInstructions(account: string, amountCzk: number, orderNumber: string, recipientName: string): TransferInstructions {
+  assertBankAccount(account);
   const iban = czechAccountToIban(account);
-  return {
-    account,
+  const spd = buildSpd({
     iban,
     amountCzk,
     variableSymbol: orderNumber,
-    spd: buildSpd({
-      iban,
-      amountCzk,
-      variableSymbol: orderNumber,
-      recipientName,
-      message: `Objednavka ${orderNumber}`,
-    }),
-  };
+    recipientName,
+    message: `Objednavka ${orderNumber}`,
+  });
+  // Pojistka i pro obsah QR kódu: musí v něm být uzamčený účet
+  if (!spd.includes(`ACC:${czechAccountToIban(env.bankAccountLock)}*`)) {
+    alertMismatch(account);
+    throw new BankAccountMismatchError(account);
+  }
+  return { account, iban, amountCzk, variableSymbol: orderNumber, spd };
 }
 
 export async function qrPng(spd: string): Promise<Buffer> {

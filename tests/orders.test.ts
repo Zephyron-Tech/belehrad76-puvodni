@@ -75,6 +75,11 @@ describe("objednávky a sklad", () => {
     await expect(createOrder(checkout({ paymentMethod: "GOPAY" }), null)).resolves.toBeTruthy();
   });
 
+  it("pojistka čísla účtu: s cizím účtem v databázi nejde objednat převodem", async () => {
+    await setSetting("bank.account", "19-2000145399/0800");
+    await expect(createOrder(checkout({ paymentMethod: "BANK_TRANSFER" }), null)).rejects.toThrow("Platba převodem je momentálně nedostupná");
+  });
+
   it("vypnutá platební brána: objednávku přes GoPay nelze vytvořit, převodem ano", async () => {
     await setSetting("payment.gopay", "false");
     await expect(createOrder(checkout({ paymentMethod: "GOPAY" }), null)).rejects.toThrow("Platba přes platební bránu není k dispozici");
